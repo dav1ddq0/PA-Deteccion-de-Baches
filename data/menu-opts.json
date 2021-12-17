@@ -1,0 +1,20 @@
+{
+    "nombreApp" : "Componentes",
+    "routes" : [
+        {
+            "route" : "info",
+            "icon" : "info",
+            "text": "Info"
+        },
+        {
+            "route" : "map",
+            "icon" : "map",
+            "text": "Map"
+        },
+        {
+            "route" : "socialmedia",
+            "icon" : "social",
+            "text": "Social Media"
+        }
+    ]
+}
