@@ -1,8 +1,9 @@
 import 'dart:async';
-
+import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
 import 'package:deteccion_de_baches/src/utils/icon_string.dart';
 
@@ -25,39 +26,199 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<List<double>> _timeSeries = List<List<double>>.filled(
-      1, List<double>.filled(3, 0, growable: false),
-      growable: true);
-  Timer? _timer;
-  bool _scanning = false;
+  final List<StreamSubscription<dynamic>> _streamSubscriptions = <StreamSubscription<dynamic>>[];
+  late Timer _timer;
 
-  void _updateScanningStatus() {
+  late GyroscopeEvent _gyroEvent;
+  late AccelerometerEvent _accelEvent;
+  
+  List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
+  List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
+  
+  List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
+  List<int> _states = []; // Estados del vehículo, puede estar parado (0) o en movimiento (1)
+  List<int> _changePointsIndexes = []; // Para saber cual de los estados representa un punto de cambio (frenar o comenzar a moverse)
+  bool _motion = false; // Para saber si el teléfono se encuentra en un vehículo en movimiento
+  bool _scanning = false; // Para saber si la app está escaneando o no
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  // Métodos auxiliares
+
+  void updateAccelRelatedData (double accelReadX, double accelReadY, double accelReadZ, 
+    double previousAccelX, double previousAccelY, double previousAccelZ, double previousSpeed) {
+    
+    var newAccel = updateAccel(accelReadX, accelReadY, accelReadY);
+    var newMotion = detectMotion(_states, previousAccelX, previousAccelY, previousAccelZ, accelReadX, accelReadY, accelReadZ);
+    _accelRead = [..._accelRead, newAccel];
+    _motion = newMotion;
+
+    var newState = _updateStates();
+    _states = [..._states, newState];
+
+    var newChangePointIndex = _updateChangePointsIndex();
+    var newSpeed = _updateSpeedRead(previousSpeed, accelReadY);
+    
     setState(() {
-      _scanning = !_scanning;
-      if (_scanning) _updateSensorDataOutput();
+      _changePointsIndexes = newChangePointIndex == -1 ? _changePointsIndexes : [..._changePointsIndexes,  newChangePointIndex];
+
+      if (_motion) {
+        _speedRead = [..._speedRead, newSpeed];
+      }
+      else {
+      _speedRead = [..._speedRead, 0];
+      }
     });
   }
 
-  void _updateSensorDataOutput() async {
-    while (_scanning) {
-      await Future.delayed(const Duration(seconds: 1), () {
-        setState(() {
-          accelerometerEvents.listen(
-            (AccelerometerEvent event) {
-              if (_timeSeries.length == 1000) {
-                _timeSeries.removeAt(0);
-                _timeSeries.add([event.x, event.y, event.z]);
-              } else {
-                _timeSeries.add([event.x, event.y, event.z]);
-              }
-            },
-          );
+  Tuple3<double, double, double> updateAccel (double currentReadX, double currentReadY, double currentReadZ) {
+    if (_accelRead.length == 1000) {
+      _accelRead.removeAt(0);
+      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+    }
+
+    else {
+      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+    }
+  }
+
+  int _updateStates () {
+    if (_states.length == 1000) {
+        _states.removeAt(0);
+        return _motion == true ? 1 : 0;
+    }
+
+    else {
+      return _motion == true ? 1 : 0;
+    }
+  }
+
+  double _updateSpeedRead (double previousSpeed, double currentReadY) {
+    if (_speedRead.length == 1000) {
+      _speedRead.removeAt(0);
+      if (_motion) {
+        return double.parse(speedEstKinetic(previousSpeed, currentReadY, 0.1).toStringAsPrecision(8));
+      }
+
+      else {
+        return 0;
+      }
+    }
+
+    else {
+      return _motion ? double.parse(speedEstKinetic(previousSpeed, currentReadY, 1).toStringAsPrecision(8)) : 0;
+    }
+  }
+  
+  int _updateChangePointsIndex() {
+    if (_states.length > 2) {
+      if (_changePointsIndexes.length == 999) {
+        _changePointsIndexes.removeAt(0);
+        return lastStateIsChangePoint(_states, _changePointsIndexes);
+      }
+
+      else {
+        return lastStateIsChangePoint(_states, _changePointsIndexes);
+      }
+    }
+    return -1;
+  }
+
+  void subscribeAccelEventListener () {
+    _streamSubscriptions.add(
+      accelerometerEvents.listen(
+        (AccelerometerEvent event) {
+          setState(() {
+           _accelEvent = event;
+          });
+        }));
+  }
+
+  void subscribeGyroEventListener () {
+    _streamSubscriptions.add(
+     gyroscopeEvents.listen(
+       (GyroscopeEvent event) {
+         setState(() {
+           _gyroEvent = event;
+         });
+       }));
+  }
+
+  void _switchTimerAndEvents () {
+    if (_scanning) {
+      _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _updateAccelRelatedDataOutput();
+          _updateGyroDataOutput();
         });
+
+      if (_streamSubscriptions.isEmpty) {
+        subscribeAccelEventListener();
+        subscribeGyroEventListener();
+      }
+
+      else {
+        for (var subscription in _streamSubscriptions) {
+        subscription.resume();
+        }
+      }
+    }
+
+    else {
+      _timer.cancel();
+      for (var subscription in _streamSubscriptions) {
+        subscription.pause();
+      }
+    }
+  }
+  // Métodos activados por onPressed
+  void _switchScanning () {
+    setState(() {
+      _scanning = !_scanning;
+    });
+    _switchTimerAndEvents();
+  }
+
+  Future<void> _updateAccelRelatedDataOutput() async { // Obtener lecturas del giroscopio y acelerómetro
+    final double currentReadX = double.parse(_accelEvent.x.toStringAsPrecision(6));
+    final double currentReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
+    final double currentReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
+
+    if (_accelRead.isNotEmpty) {
+      final double previousReadX = _accelRead[_accelRead.length - 1].item1;
+      final double previousReadY = _accelRead[_accelRead.length - 1].item2;
+      final double previousReadZ = _accelRead[_accelRead.length - 1].item3;
+
+      if(_speedRead.isNotEmpty) {
+        final double previousSpeed = _speedRead[_speedRead.length - 1];                
+        updateAccelRelatedData(currentReadX, currentReadY, currentReadZ, previousReadX, previousReadY, previousReadZ, previousSpeed);
+      }
+    }
+    else {
+      setState(() {
+        var newAccelRead = updateAccel(currentReadX, currentReadY, currentReadZ);
+        _accelRead = [..._accelRead, newAccelRead];
+        _states = [0];
+        _speedRead = [..._speedRead, 0];
       });
     }
   }
 
-  void _sensorRead() {}
+  Future<void> _updateGyroDataOutput () async {
+    final double previousReadX = _gyroRead[_gyroRead.length - 1].item1;
+    final double previousReadY = _gyroRead[_gyroRead.length - 1].item2;
+    final double previousReadZ = _gyroRead[_gyroRead.length - 1].item3;
+    if (_gyroRead[0].item1 == 0 ||_gyroRead.length == 1000) {
+      _gyroRead.removeAt(0);
+      _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
+    }
+    else {
+      _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
+    }
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +248,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: _createPagesAccessItems(snapshot.data, context));
             }),
         const SizedBox(
-          height: 50,
+          height: 20,
         ),
         _createAxisInfoItems(context)
       ],
@@ -146,31 +307,52 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.black,
                       fontSize: 15,
                       fontWeight: FontWeight.bold)),
-          onPressed: _updateScanningStatus,
-        ),
-        const ListTile(
-          title: Text('X axis acceleration is:'),
-          leading: Icon(Icons.arrow_circle_down),
-        ),
-        Text(
-          '${_timeSeries[0][0]}',
-          style: Theme.of(context).textTheme.headline4,
+          onPressed: _switchScanning
         ),
         const ListTile(
           title: Text('Y axis acceleration is:'),
-          leading: Icon(Icons.arrow_right),
+          leading: Icon(Icons.arrow_circle_down),
         ),
         Text(
-          '${_timeSeries[0][1]}',
+          _accelRead.isEmpty 
+            ? 'None' 
+            : '${_accelRead[_accelRead.length - 1].item2}',
           style: Theme.of(context).textTheme.headline4,
         ),
         const ListTile(
-          title: Text('Z axis acceleration is:'),
-          leading: Icon(Icons.arrow_upward),
+          title: Text('Current state is change point ??'),
+          leading: Icon(Icons.star_rate_outlined),
         ),
         Text(
-          '${_timeSeries[0][2]}',
+          _changePointsIndexes.isNotEmpty
+            ? _states.length - 1 == _changePointsIndexes[_changePointsIndexes.length - 1]
+              ? 'YES' 
+              : 'NO'
+            : 'List Empty',
+          style: TextStyle(color: _changePointsIndexes.isNotEmpty
+            ? _states.length - 1 == _changePointsIndexes[_changePointsIndexes.length - 1]
+              ? Colors.green.shade900
+              : Colors.red.shade900
+            : Colors.amber.shade900, fontSize: 30),
+        ),
+        const ListTile(
+          title: Text('Current speed'),
+          leading: Icon(Icons.speed),
+        ),
+        Text(
+          _speedRead.isEmpty
+            ? 'None' 
+            : '${_speedRead[_speedRead.length - 1]} km/h',
           style: Theme.of(context).textTheme.headline4,
+        ),
+        Text(
+          _motion 
+            ? 'In motion'
+            : 'Steady', 
+          style: TextStyle(
+              color: _motion 
+                ? Colors.green.shade900
+                : Colors.red.shade900)
         )
       ],
     );
