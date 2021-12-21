@@ -24,7 +24,7 @@ bool detectMotion(List<int> _states, double oldXAccelX, double oldXAccelY, doubl
 
     else {
       if (newXAccelY - oldXAccelY < threshold || newXAccelY + oldXAccelY > -threshold) {
-        return false;
+        return _states[_states.length - 1] == 1;
       }
       return true;
     }
