@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:sorted_list/sorted_list.dart';
 
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
@@ -32,13 +33,12 @@ class _MyHomePageState extends State<MyHomePage> {
   late GyroscopeEvent _gyroEvent;
   late AccelerometerEvent _accelEvent;
   
+  var _sortedSlopes = SortedList<double>((slope1, slope2) => slope1.compareTo(slope2));
+
   List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
   List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
   
   List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
-  List<int> _states = []; // Estados del vehículo, puede estar parado (0) o en movimiento (1)
-  List<int> _changePointsIndexes = []; // Para saber cual de los estados representa un punto de cambio (frenar o comenzar a moverse)
-  bool _motion = false; // Para saber si el teléfono se encuentra en un vehículo en movimiento
   bool _scanning = false; // Para saber si la app está escaneando o no
 
   @override
@@ -49,32 +49,20 @@ class _MyHomePageState extends State<MyHomePage> {
   // Métodos auxiliares
 
   void updateAccelRelatedData (double accelReadX, double accelReadY, double accelReadZ, 
-    double previousAccelX, double previousAccelY, double previousAccelZ, double previousSpeed) {
+    double previousAccelX, double previousAccelReadY, double previousAccelReadZ, double previousSpeed) {
     
-    var newAccel = updateAccel(accelReadX, accelReadY, accelReadY);
-    var newMotion = detectMotion(_states, previousAccelX, previousAccelY, previousAccelZ, accelReadX, accelReadY, accelReadZ);
+    var newAccel = updateAccelData(accelReadX, accelReadY, accelReadZ);
     _accelRead = [..._accelRead, newAccel];
-    _motion = newMotion;
 
-    var newState = _updateStates();
-    _states = [..._states, newState];
-
-    var newChangePointIndex = _updateChangePointsIndex();
-    var newSpeed = _updateSpeedRead(previousSpeed, accelReadY);
+    var newSpeed = _updateSpeedRead(previousSpeed, accelReadY, previousAccelReadY);
+    _sortedSlopes.add(newSpeed - _speedRead.last);
     
     setState(() {
-      _changePointsIndexes = newChangePointIndex == -1 ? _changePointsIndexes : [..._changePointsIndexes,  newChangePointIndex];
-
-      if (_motion) {
-        _speedRead = [..._speedRead, newSpeed];
-      }
-      else {
-      _speedRead = [..._speedRead, 0];
-      }
+      _speedRead = [..._speedRead, newSpeed];
     });
   }
 
-  Tuple3<double, double, double> updateAccel (double currentReadX, double currentReadY, double currentReadZ) {
+  Tuple3<double, double, double> updateAccelData (double currentReadX, double currentReadY, double currentReadZ) {
     if (_accelRead.length == 1000) {
       _accelRead.removeAt(0);
       return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
@@ -85,46 +73,17 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  int _updateStates () {
-    if (_states.length == 1000) {
-        _states.removeAt(0);
-        return _motion == true ? 1 : 0;
-    }
-
-    else {
-      return _motion == true ? 1 : 0;
-    }
-  }
-
-  double _updateSpeedRead (double previousSpeed, double currentReadY) {
+  double _updateSpeedRead (double previousSpeed, double currentReadY, double previousReadY) {
     if (_speedRead.length == 1000) {
       _speedRead.removeAt(0);
-      if (_motion) {
-        return double.parse(speedEstKinetic(previousSpeed, currentReadY, 0.1).toStringAsPrecision(8));
-      }
-
-      else {
-        return 0;
-      }
     }
+    double slopeMedian = _sortedSlopes.length % 2 == 0
+      ? (_sortedSlopes[(_sortedSlopes.length / 2).round() - 1] + _sortedSlopes[(_sortedSlopes.length / 2).round() - 1])  / 2
+      : _sortedSlopes[(_sortedSlopes.length / 2).round() - 1];
 
-    else {
-      return _motion ? double.parse(speedEstKinetic(previousSpeed, currentReadY, 1).toStringAsPrecision(8)) : 0;
-    }
-  }
-  
-  int _updateChangePointsIndex() {
-    if (_states.length > 2) {
-      if (_changePointsIndexes.length == 999) {
-        _changePointsIndexes.removeAt(0);
-        return lastStateIsChangePoint(_states, _changePointsIndexes);
-      }
-
-      else {
-        return lastStateIsChangePoint(_states, _changePointsIndexes);
-      }
-    }
-    return -1;
+    return (currentReadY - previousReadY).abs() < 0.5
+      ? previousSpeed
+      : double.parse(computeSpeed(previousSpeed, currentReadY, slopeMedian, 0.1).toStringAsPrecision(8));
   }
 
   void subscribeAccelEventListener () {
@@ -149,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _switchTimerAndEvents () {
     if (_scanning) {
-      _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+      _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
           _updateAccelRelatedDataOutput();
           _updateGyroDataOutput();
         });
@@ -187,9 +146,9 @@ class _MyHomePageState extends State<MyHomePage> {
     final double currentReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
 
     if (_accelRead.isNotEmpty) {
-      final double previousReadX = _accelRead[_accelRead.length - 1].item1;
-      final double previousReadY = _accelRead[_accelRead.length - 1].item2;
-      final double previousReadZ = _accelRead[_accelRead.length - 1].item3;
+      final double previousReadX = _accelRead.last.item1;
+      final double previousReadY = _accelRead.last.item2;
+      final double previousReadZ = _accelRead.last.item3;
 
       if(_speedRead.isNotEmpty) {
         final double previousSpeed = _speedRead[_speedRead.length - 1];                
@@ -198,18 +157,18 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     else {
       setState(() {
-        var newAccelRead = updateAccel(currentReadX, currentReadY, currentReadZ);
-        _accelRead = [..._accelRead, newAccelRead];
-        _states = [0];
-        _speedRead = [..._speedRead, 0];
+        var newAccelRead = updateAccelData(currentReadX, currentReadY, currentReadZ);
+        _accelRead.add(newAccelRead);
+        _speedRead.add(0);
+        _sortedSlopes.add(0);
       });
     }
   }
 
   Future<void> _updateGyroDataOutput () async {
-    final double previousReadX = _gyroRead[_gyroRead.length - 1].item1;
-    final double previousReadY = _gyroRead[_gyroRead.length - 1].item2;
-    final double previousReadZ = _gyroRead[_gyroRead.length - 1].item3;
+    final double previousReadX = _gyroRead.last.item1;
+    final double previousReadY = _gyroRead.last.item2;
+    final double previousReadZ = _gyroRead.last.item3;
     if (_gyroRead[0].item1 == 0 ||_gyroRead.length == 1000) {
       _gyroRead.removeAt(0);
       _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
@@ -288,6 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _createAxisInfoItems(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -309,121 +269,80 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontWeight: FontWeight.bold)),
           onPressed: _switchScanning
         ),
-        const ListTile(
-          title: Text('Y axis acceleration is:'),
-          leading: Icon(Icons.arrow_circle_down),
+        const SizedBox(
+              height: 10,
+            ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Text(
+                  'Y axis accel is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _accelRead.isEmpty 
+                    ? 'None' 
+                    : '${_accelRead.last.item2}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              children: [
+                const Text(
+                  'Z axis accel is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _accelRead.isEmpty 
+                    ? 'None' 
+                    : '${_accelRead.last.item3}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+          ]
         ),
-        Text(
-          _accelRead.isEmpty 
-            ? 'None' 
-            : '${_accelRead[_accelRead.length - 1].item2}',
-          style: Theme.of(context).textTheme.headline4,
+      
+        Column(
+          children: [
+            const ListTile(
+              leading: Icon(Icons.speed),
+              title: Text(
+                'Current speed',
+                style: TextStyle(
+                  fontSize: 24
+                ),
+              ),
+            ),
+
+            Text(
+              _speedRead.isEmpty
+                ? 'None' 
+                : '${_speedRead.last} km/h',
+              style: TextStyle(
+                fontSize: 40,
+                color: _speedRead.isEmpty
+                  ? Colors.blueAccent
+                  : Colors.amber
+              ),
+            ),
+          ],
         ),
-        const ListTile(
-          title: Text('Current state is change point ??'),
-          leading: Icon(Icons.star_rate_outlined),
-        ),
-        Text(
-          _changePointsIndexes.isNotEmpty
-            ? _states.length - 1 == _changePointsIndexes[_changePointsIndexes.length - 1]
-              ? 'YES' 
-              : 'NO'
-            : 'List Empty',
-          style: TextStyle(color: _changePointsIndexes.isNotEmpty
-            ? _states.length - 1 == _changePointsIndexes[_changePointsIndexes.length - 1]
-              ? Colors.green.shade900
-              : Colors.red.shade900
-            : Colors.amber.shade900, fontSize: 30),
-        ),
-        const ListTile(
-          title: Text('Current speed'),
-          leading: Icon(Icons.speed),
-        ),
-        Text(
-          _speedRead.isEmpty
-            ? 'None' 
-            : '${_speedRead[_speedRead.length - 1]} km/h',
-          style: Theme.of(context).textTheme.headline4,
-        ),
-        Text(
-          _motion 
-            ? 'In motion'
-            : 'Steady', 
-          style: TextStyle(
-              color: _motion 
-                ? Colors.green.shade900
-                : Colors.red.shade900)
-        )
-      ],
+      ]
     );
   }
 }
-
-// class HomePage extends StatefulWidget {
-//   @override
-//   createState() => _HomePageState();
-// }
-
-// class _HomePageState extends State<HomePage> {
-//   final TextStyle _my_style = new TextStyle(fontSize: 25);
-//   int _count = 10;
-
-//   void _increase_counter() {
-//     setState(() {
-//       _count++;
-//     });
-//   }
-
-//   void _decrease_counter() {
-//     setState(() {
-//       _count--;
-//     });
-//   }
-
-//   void _counter_to_zero() {
-//     setState(() {
-//       _count = 0;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//         appBar: AppBar(
-//           title: Text('Bump Record'),
-//           centerTitle: true,
-//         ),
-//         body: Center(
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: <Widget>[
-//               Text('Amount of clicks:', style: _my_style),
-//               Text('$_count', style: _my_style)
-//             ],
-//           )
-//         ),
-//         floatingActionButton: createButtons()
-//     );
-//   }
-
-//   Widget createButtons() {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.end,
-//       children: <Widget>[
-//         SizedBox(width: 30),
-//         FloatingActionButton(
-//             child: Icon(Icons.exposure_zero), onPressed: _counter_to_zero
-//             ),
-//         Expanded(
-//           child: SizedBox()
-//           ),
-//         FloatingActionButton(
-//             child: Icon(Icons.remove), onPressed: _decrease_counter
-//             ),
-//         FloatingActionButton(
-//             child: Icon(Icons.add), onPressed: _increase_counter
-//             ),
-//       ],
-//     );
-//   }
-// }

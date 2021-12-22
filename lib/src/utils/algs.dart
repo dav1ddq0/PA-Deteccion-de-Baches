@@ -16,15 +16,15 @@ bool detectMotion(List<int> _states, double oldXAccelX, double oldXAccelY, doubl
   int threshold = 2;
   if (oldXAccelY != newXAccelY) {
     if (_states[_states.length - 1] == 0) {
-      if (newXAccelY - oldXAccelY > threshold || newXAccelY + oldXAccelY < -threshold) {
+      if (newXAccelY - oldXAccelY > threshold || newXAccelY - oldXAccelY < -threshold) {
         return true;
       }
       return false;
     }
 
     else {
-      if (newXAccelY - oldXAccelY < threshold || newXAccelY + oldXAccelY > -threshold) {
-        return _states[_states.length - 1] == 1;
+      if (newXAccelY - oldXAccelY > threshold || newXAccelY - oldXAccelY < -threshold) {
+        return false;
       }
       return true;
     }
@@ -32,11 +32,15 @@ bool detectMotion(List<int> _states, double oldXAccelX, double oldXAccelY, doubl
   return false;
 }
 
+double computeSpeed(double previousSpeed, double yAccel, double slopeMedian, double timeInterval) {
+  double kineticFormula = previousSpeed + yAccel*timeInterval*3.6;
+  double calibratedSpeed = kineticFormula - slopeMedian - previousSpeed;
+
+  return calibratedSpeed < 0 ? 0 : calibratedSpeed;
+}
+
 bool zThresh(double zAccel, double threshold) =>
     zAccel.abs() > threshold;
 
 bool zDiff(double zAccelStart, double zAccelEnd, double threshold) => 
   (zAccelEnd - zAccelStart).abs() > threshold;
-
-double speedEstKinetic(double previousSpeed, double yAccel, double timeInterval) => // Asume aceleración constante, y se expresa en km/h
-  previousSpeed + yAccel.abs()*timeInterval*3.6;
