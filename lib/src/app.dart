@@ -1,5 +1,6 @@
 import 'package:deteccion_de_baches/src/pages/map_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:deteccion_de_baches/src/routes/routes.dart';
 
@@ -9,6 +10,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+
+    SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+    ]);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Bump Record1',

@@ -34,7 +34,7 @@ bool detectMotion(List<int> _states, double oldXAccelX, double oldXAccelY, doubl
 
 double computeSpeed(double previousSpeed, double yAccel, double slopeMedian, double timeInterval) {
   double kineticFormula = previousSpeed + yAccel*timeInterval*3.6;
-  double calibratedSpeed = kineticFormula - slopeMedian - previousSpeed;
+  double calibratedSpeed = kineticFormula - slopeMedian;
 
   return calibratedSpeed < 0 ? 0 : calibratedSpeed;
 }

@@ -27,13 +27,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<StreamSubscription<dynamic>> _streamSubscriptions = <StreamSubscription<dynamic>>[];
+
+  static const int _readIntervals = 1000;
+
+  final _sortedSlopes = SortedList<double>((slope1, slope2) => slope1.compareTo(slope2));
+  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   late Timer _timer;
 
   late GyroscopeEvent _gyroEvent;
-  late AccelerometerEvent _accelEvent;
-  
-  var _sortedSlopes = SortedList<double>((slope1, slope2) => slope1.compareTo(slope2));
+  late UserAccelerometerEvent _accelEvent;
 
   List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
   List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
@@ -48,17 +50,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Métodos auxiliares
 
+  void updategGyroRelatedData (double gyroReadX, double gyroReadY, double gyroReadZ, 
+    double previousGyroX, double previousGyroReadY, double previousGyroReadZ) {
+
+      final newGyroSpeed = updateGyroData (gyroReadX, gyroReadY, gyroReadZ);
+
+      setState(() {
+        _gyroRead.add(newGyroSpeed);
+      });
+  }
+
+  Tuple3<double, double, double> updateGyroData (double currentReadX, double currentReadY, double currentReadZ) {
+    if (_gyroRead.length == 1000) {
+      _gyroRead.removeAt(0);
+      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+    }
+
+    else {
+      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+    }
+  }
+
   void updateAccelRelatedData (double accelReadX, double accelReadY, double accelReadZ, 
     double previousAccelX, double previousAccelReadY, double previousAccelReadZ, double previousSpeed) {
     
-    var newAccel = updateAccelData(accelReadX, accelReadY, accelReadZ);
-    _accelRead = [..._accelRead, newAccel];
-
-    var newSpeed = _updateSpeedRead(previousSpeed, accelReadY, previousAccelReadY);
-    _sortedSlopes.add(newSpeed - _speedRead.last);
+    final newAccel = updateAccelData(accelReadX, accelReadY, accelReadZ);
+    final newSpeed = _updateSpeedRead(previousSpeed, accelReadY, previousAccelReadY);
     
     setState(() {
-      _speedRead = [..._speedRead, newSpeed];
+      _accelRead.add(newAccel);
+      _sortedSlopes.add((newSpeed - _speedRead.last) / (_readIntervals / 1000));
+      _speedRead.add(newSpeed);
     });
   }
 
@@ -77,19 +99,18 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_speedRead.length == 1000) {
       _speedRead.removeAt(0);
     }
+
     double slopeMedian = _sortedSlopes.length % 2 == 0
-      ? (_sortedSlopes[(_sortedSlopes.length / 2).round() - 1] + _sortedSlopes[(_sortedSlopes.length / 2).round() - 1])  / 2
+      ? (_sortedSlopes[(_sortedSlopes.length / 2).round()] + _sortedSlopes[(_sortedSlopes.length / 2).round() - 1])  / 2
       : _sortedSlopes[(_sortedSlopes.length / 2).round() - 1];
 
-    return (currentReadY - previousReadY).abs() < 0.5
-      ? previousSpeed
-      : double.parse(computeSpeed(previousSpeed, currentReadY, slopeMedian, 0.1).toStringAsPrecision(8));
+    return double.parse(computeSpeed(previousSpeed, currentReadY, slopeMedian, (_readIntervals / 1000)).toStringAsPrecision(5));
   }
 
   void subscribeAccelEventListener () {
     _streamSubscriptions.add(
-      accelerometerEvents.listen(
-        (AccelerometerEvent event) {
+      userAccelerometerEvents.listen(
+        (UserAccelerometerEvent event) {
           setState(() {
            _accelEvent = event;
           });
@@ -98,17 +119,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void subscribeGyroEventListener () {
     _streamSubscriptions.add(
-     gyroscopeEvents.listen(
-       (GyroscopeEvent event) {
-         setState(() {
+      gyroscopeEvents.listen(
+        (GyroscopeEvent event) {
+          setState(() {
            _gyroEvent = event;
-         });
-       }));
+          });
+        }));
   }
 
   void _switchTimerAndEvents () {
     if (_scanning) {
-      _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      _timer = Timer.periodic(Duration(milliseconds: _readIntervals), (timer) {
           _updateAccelRelatedDataOutput();
           _updateGyroDataOutput();
         });
@@ -117,6 +138,7 @@ class _MyHomePageState extends State<MyHomePage> {
         subscribeAccelEventListener();
         subscribeGyroEventListener();
       }
+
 
       else {
         for (var subscription in _streamSubscriptions) {
@@ -157,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     else {
       setState(() {
-        var newAccelRead = updateAccelData(currentReadX, currentReadY, currentReadZ);
+        final newAccelRead = updateAccelData(currentReadX, currentReadY, currentReadZ);
         _accelRead.add(newAccelRead);
         _speedRead.add(0);
         _sortedSlopes.add(0);
@@ -166,15 +188,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _updateGyroDataOutput () async {
-    final double previousReadX = _gyroRead.last.item1;
-    final double previousReadY = _gyroRead.last.item2;
-    final double previousReadZ = _gyroRead.last.item3;
-    if (_gyroRead[0].item1 == 0 ||_gyroRead.length == 1000) {
-      _gyroRead.removeAt(0);
-      _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
+    final double currentReadX = double.parse(_gyroEvent.x.toStringAsPrecision(6));
+    final double currentReadY = double.parse(_gyroEvent.y.toStringAsPrecision(6));
+    final double currentReadZ = double.parse(_gyroEvent.z.toStringAsPrecision(6));
+    
+    if (_gyroRead.isNotEmpty) {
+      final double previousReadX = _gyroRead.last.item1;
+      final double previousReadY = _gyroRead.last.item2;
+      final double previousReadZ = _gyroRead.last.item3;
+      
+      updategGyroRelatedData(currentReadX, currentReadY, currentReadZ, previousReadX, previousReadY, previousReadZ);
     }
+
     else {
-      _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
+      setState(() {
+        final newGyroRead = updateGyroData(currentReadX, currentReadY, currentReadZ);
+        _gyroRead.add(newGyroRead);
+      });
     }
 
   }
@@ -341,6 +371,51 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
           ],
+        ),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Text(
+                  'Y axis gyro is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _gyroRead.isEmpty 
+                    ? 'None' 
+                    : '${_gyroRead.last.item2}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              children: [
+                const Text(
+                  'Z axis gyro is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _gyroRead.isEmpty
+                    ? 'None' 
+                    : '${_gyroRead.last.item3}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+          ]
         ),
       ]
     );
