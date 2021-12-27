@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -37,6 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late GyroscopeEvent _gyroEvent;
   late UserAccelerometerEvent _accelEvent;
 
+  List<Position>? _geoLoc = [];
   List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
   List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
   
@@ -49,6 +51,40 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // Métodos auxiliares
+
+  Future<Position> _getGeoLocationPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+      
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
 
   void updategGyroRelatedData (double gyroReadX, double gyroReadY, double gyroReadZ, 
     double previousGyroX, double previousGyroReadY, double previousGyroReadZ) {
@@ -217,7 +253,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: _createHomePageItems(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {
+          _geoLoc?.add(await _getGeoLocationPosition());
+        },
         tooltip: 'reload',
         child: const Icon(Icons.refresh),
       ), // This trailing comma makes auto-formatting nicer for build methods.
@@ -408,6 +446,53 @@ class _MyHomePageState extends State<MyHomePage> {
                   _gyroRead.isEmpty
                     ? 'None' 
                     : '${_gyroRead.last.item3}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+          ]
+        ),
+        const SizedBox(
+              height: 10,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Text(
+                  'Latitude', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _geoLoc != null 
+                    ? '${_geoLoc?.last.latitude}' 
+                    : 'None',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              children: [
+                const Text(
+                  'Longitude', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _geoLoc != null 
+                    ? '${_geoLoc?.last.latitude}' 
+                    : 'None',
                   style: const TextStyle(
                     fontSize: 20,
                     color: Colors.purple
