@@ -32,13 +32,13 @@ class _MyHomePageState extends State<MyHomePage> {
   static const int _readIntervals = 1000;
 
   final _sortedSlopes = SortedList<double>((slope1, slope2) => slope1.compareTo(slope2));
+  
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   late Timer _timer;
-
   late GyroscopeEvent _gyroEvent;
   late UserAccelerometerEvent _accelEvent;
 
-  List<Position>? _geoLoc = [];
+  List<Position?> _geoLoc = [];
   List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
   List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
   
@@ -51,40 +51,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // Métodos auxiliares
-
-  Future<Position> _getGeoLocationPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      await Geolocator.openLocationSettings();
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-      
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-  }
 
   void updategGyroRelatedData (double gyroReadX, double gyroReadY, double gyroReadZ, 
     double previousGyroX, double previousGyroReadY, double previousGyroReadZ) {
@@ -163,11 +129,14 @@ class _MyHomePageState extends State<MyHomePage> {
         }));
   }
 
+  // Métodos activados por onPressed
+
   void _switchTimerAndEvents () {
     if (_scanning) {
-      _timer = Timer.periodic(Duration(milliseconds: _readIntervals), (timer) {
+      _timer = Timer.periodic(const Duration(milliseconds: _readIntervals), (timer) {
           _updateAccelRelatedDataOutput();
           _updateGyroDataOutput();
+          _getGeoLocationPosition();
         });
 
       if (_streamSubscriptions.isEmpty) {
@@ -190,12 +159,52 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
   }
-  // Métodos activados por onPressed
+
   void _switchScanning () {
     setState(() {
       _scanning = !_scanning;
     });
     _switchTimerAndEvents();
+  }
+
+  // Métodos para actualizar UI
+
+  Future<void> _getGeoLocationPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+      
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    Position newRead = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+    setState(() {
+      _geoLoc.add(newRead);
+    });
   }
 
   Future<void> _updateAccelRelatedDataOutput() async { // Obtener lecturas del giroscopio y acelerómetro
@@ -209,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
       final double previousReadZ = _accelRead.last.item3;
 
       if(_speedRead.isNotEmpty) {
-        final double previousSpeed = _speedRead[_speedRead.length - 1];                
+        final double previousSpeed = _speedRead.last;            
         updateAccelRelatedData(currentReadX, currentReadY, currentReadZ, previousReadX, previousReadY, previousReadZ, previousSpeed);
       }
     }
@@ -245,6 +254,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
 
+  // Método para construir el Widget
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,7 +265,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: _createHomePageItems(),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          _geoLoc?.add(await _getGeoLocationPosition());
+          await _getGeoLocationPosition();
         },
         tooltip: 'reload',
         child: const Icon(Icons.refresh),
@@ -470,9 +481,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 Text(
-                  _geoLoc != null 
-                    ? '${_geoLoc?.last.latitude}' 
-                    : 'None',
+                  _geoLoc.isNotEmpty
+                    ? '${_geoLoc.last?.latitude}'
+                    : 'Empty List',
                   style: const TextStyle(
                     fontSize: 20,
                     color: Colors.purple
@@ -490,8 +501,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 Text(
-                  _geoLoc != null 
-                    ? '${_geoLoc?.last.latitude}' 
+                  _geoLoc.isNotEmpty
+                    ? '${_geoLoc.last?.latitude}' 
                     : 'None',
                   style: const TextStyle(
                     fontSize: 20,
