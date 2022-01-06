@@ -3,7 +3,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-import 'package:sorted_list/sorted_list.dart';
 
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
@@ -29,20 +28,20 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  static const int _readIntervals = 1000;
+  static const int _accelReadIntervals = 100;
+  static const int _geoLocReadIntervals = 1000;
 
-  final _sortedSlopes = SortedList<double>((slope1, slope2) => slope1.compareTo(slope2));
-  
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
-  late Timer _timer;
+  final List<Position?> _geoLoc = [];
+  final List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
+  final List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
+  final List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
+
+  late Timer _accelTimer;
+  late Timer _geoLocTimer;
   late GyroscopeEvent _gyroEvent;
   late UserAccelerometerEvent _accelEvent;
 
-  List<Position?> _geoLoc = [];
-  List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
-  List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
-  
-  List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
   bool _scanning = false; // Para saber si la app está escaneando o no
 
   @override
@@ -52,61 +51,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Métodos auxiliares
 
-  void updategGyroRelatedData (double gyroReadX, double gyroReadY, double gyroReadZ, 
-    double previousGyroX, double previousGyroReadY, double previousGyroReadZ) {
-
-      final newGyroSpeed = updateGyroData (gyroReadX, gyroReadY, gyroReadZ);
-
-      setState(() {
-        _gyroRead.add(newGyroSpeed);
-      });
-  }
-
-  Tuple3<double, double, double> updateGyroData (double currentReadX, double currentReadY, double currentReadZ) {
+  Tuple3<double, double, double> updateGyroData (double currReadX, double currReadY, double currReadZ) {
     if (_gyroRead.length == 1000) {
       _gyroRead.removeAt(0);
-      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+      return Tuple3<double, double, double>(currReadX, currReadY, currReadZ);
     }
 
     else {
-      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+      return Tuple3<double, double, double>(currReadX, currReadY, currReadZ);
     }
   }
 
-  void updateAccelRelatedData (double accelReadX, double accelReadY, double accelReadZ, 
-    double previousAccelX, double previousAccelReadY, double previousAccelReadZ, double previousSpeed) {
-    
-    final newAccel = updateAccelData(accelReadX, accelReadY, accelReadZ);
-    final newSpeed = _updateSpeedRead(previousSpeed, accelReadY, previousAccelReadY);
-    
-    setState(() {
-      _accelRead.add(newAccel);
-      _sortedSlopes.add((newSpeed - _speedRead.last) / (_readIntervals / 1000));
-      _speedRead.add(newSpeed);
-    });
-  }
+  Tuple3<double, double, double> updateAccelData (double currReadX, double currReadY, double currReadZ,
+    double prevReadX, double prevReadY, double prevReadZ) {
 
-  Tuple3<double, double, double> updateAccelData (double currentReadX, double currentReadY, double currentReadZ) {
     if (_accelRead.length == 1000) {
       _accelRead.removeAt(0);
-      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+      return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
     }
 
     else {
-      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
+      return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
     }
   }
 
-  double _updateSpeedRead (double previousSpeed, double currentReadY, double previousReadY) {
+  double _updateSpeedRead (double prevLat, double prevLong, double currLat, double currLong) {
     if (_speedRead.length == 1000) {
       _speedRead.removeAt(0);
     }
 
-    double slopeMedian = _sortedSlopes.length % 2 == 0
-      ? (_sortedSlopes[(_sortedSlopes.length / 2).round()] + _sortedSlopes[(_sortedSlopes.length / 2).round() - 1])  / 2
-      : _sortedSlopes[(_sortedSlopes.length / 2).round() - 1];
-
-    return double.parse(computeSpeed(previousSpeed, currentReadY, slopeMedian, (_readIntervals / 1000)).toStringAsPrecision(5));
+    final double currSpeed = computeSpeed(prevLat, prevLong, currLat, currLong, (_accelReadIntervals / 1000));
+    return double.parse(currSpeed.toStringAsPrecision(5));
   }
 
   void subscribeAccelEventListener () {
@@ -133,9 +108,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _switchTimerAndEvents () {
     if (_scanning) {
-      _timer = Timer.periodic(const Duration(milliseconds: _readIntervals), (timer) {
+      _accelTimer = Timer.periodic(
+          const Duration(milliseconds: _accelReadIntervals), (timer) {
           _updateAccelRelatedDataOutput();
           _updateGyroDataOutput();
+        });
+      _geoLocTimer =  Timer.periodic(
+          const Duration(milliseconds: _geoLocReadIntervals), (timer) {
           _getGeoLocationPosition();
         });
 
@@ -153,7 +132,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     else {
-      _timer.cancel();
+      _geoLocTimer.cancel();
+      _accelTimer.cancel();
       for (var subscription in _streamSubscriptions) {
         subscription.pause();
       }
@@ -167,7 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _switchTimerAndEvents();
   }
 
-  // Métodos para actualizar UI
+  // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
   Future<void> _getGeoLocationPosition() async {
     bool serviceEnabled;
@@ -200,58 +180,66 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
-    Position newRead = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    Position newRead = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high);
 
+    double currLat = double.parse(newRead.latitude.toStringAsPrecision(5));
+    double currLong = double.parse(newRead.longitude.toStringAsPrecision(5));
+    // Actualizar lecturas de velocidad y coordenadas.
+
+    late double currSpeed;
+    
+    if (_geoLoc.length > 1) {
+      double prevLat = _geoLoc.last!.latitude;
+      double prevLong = _geoLoc.last!.longitude;
+      currSpeed = _updateSpeedRead(prevLat, prevLong, currLat, currLong);
+      _speedRead.add(currSpeed);
+    }
+
+      newRead = Position(
+      longitude: currLong, 
+      latitude: currLat, 
+      timestamp: newRead.timestamp,
+      accuracy: newRead.accuracy,
+      altitude: newRead.altitude,
+      heading: newRead.heading,
+      speed: newRead.speed,
+      speedAccuracy: newRead.speedAccuracy
+      );
+  
     setState(() {
       _geoLoc.add(newRead);
     });
   }
 
   Future<void> _updateAccelRelatedDataOutput() async { // Obtener lecturas del giroscopio y acelerómetro
-    final double currentReadX = double.parse(_accelEvent.x.toStringAsPrecision(6));
-    final double currentReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
-    final double currentReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
+    final double currReadX = double.parse(_accelEvent.x.toStringAsPrecision(6));
+    final double currReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
+    final double currReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
 
-    if (_accelRead.isNotEmpty) {
-      final double previousReadX = _accelRead.last.item1;
-      final double previousReadY = _accelRead.last.item2;
-      final double previousReadZ = _accelRead.last.item3;
+    final double prevReadX = _accelRead.isEmpty ? 0 : _accelRead.last.item1;
+    final double prevReadY = _accelRead.isEmpty ? 0 : _accelRead.last.item2;
+    final double prevReadZ = _accelRead.isEmpty ? 0 : _accelRead.last.item3;
 
-      if(_speedRead.isNotEmpty) {
-        final double previousSpeed = _speedRead.last;            
-        updateAccelRelatedData(currentReadX, currentReadY, currentReadZ, previousReadX, previousReadY, previousReadZ, previousSpeed);
-      }
-    }
-    else {
-      setState(() {
-        final newAccelRead = updateAccelData(currentReadX, currentReadY, currentReadZ);
-        _accelRead.add(newAccelRead);
-        _speedRead.add(0);
-        _sortedSlopes.add(0);
-      });
-    }
+    setState(() {
+      final newAccelRead = triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+      _accelRead.add(newAccelRead);
+    });
   }
 
   Future<void> _updateGyroDataOutput () async {
-    final double currentReadX = double.parse(_gyroEvent.x.toStringAsPrecision(6));
-    final double currentReadY = double.parse(_gyroEvent.y.toStringAsPrecision(6));
-    final double currentReadZ = double.parse(_gyroEvent.z.toStringAsPrecision(6));
+    final double currReadX = double.parse(_gyroEvent.x.toStringAsPrecision(6));
+    final double currReadY = double.parse(_gyroEvent.y.toStringAsPrecision(6));
+    final double currReadZ = double.parse(_gyroEvent.z.toStringAsPrecision(6));
+
+    final double prevReadX = _gyroRead.isNotEmpty ? 0 : _gyroRead.last.item1;
+    final double prevReadY = _gyroRead.isNotEmpty ? 0 : _gyroRead.last.item2;
+    final double prevReadZ = _gyroRead.isNotEmpty ? 0 : _gyroRead.last.item3;
     
-    if (_gyroRead.isNotEmpty) {
-      final double previousReadX = _gyroRead.last.item1;
-      final double previousReadY = _gyroRead.last.item2;
-      final double previousReadZ = _gyroRead.last.item3;
-      
-      updategGyroRelatedData(currentReadX, currentReadY, currentReadZ, previousReadX, previousReadY, previousReadZ);
-    }
-
-    else {
-      setState(() {
-        final newGyroRead = updateGyroData(currentReadX, currentReadY, currentReadZ);
-        _gyroRead.add(newGyroRead);
-      });
-    }
-
+    setState(() {
+      final newGyroRead = triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+      _gyroRead.add(newGyroRead);
+    });
   }
 
   // Método para construir el Widget
@@ -263,13 +251,6 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Bump Record'),
       ),
       body: _createHomePageItems(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await _getGeoLocationPosition();
-        },
-        tooltip: 'reload',
-        child: const Icon(Icons.refresh),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 
@@ -401,7 +382,7 @@ class _MyHomePageState extends State<MyHomePage> {
             const ListTile(
               leading: Icon(Icons.speed),
               title: Text(
-                'Current speed',
+                'curr speed',
                 style: TextStyle(
                   fontSize: 24
                 ),
@@ -502,8 +483,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 Text(
                   _geoLoc.isNotEmpty
-                    ? '${_geoLoc.last?.latitude}' 
-                    : 'None',
+                    ? '${_geoLoc.last?.longitude}' 
+                    : 'Empty List',
                   style: const TextStyle(
                     fontSize: 20,
                     color: Colors.purple
