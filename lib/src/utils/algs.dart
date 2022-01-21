@@ -35,7 +35,25 @@ import 'package:tuple/tuple.dart';
 //   return false;
 // }
 
-Tuple3<double, double, double> triAxialHighpassFilter (double prevReadX, double prevReadY, double prevReadZ,
+bool scanPotholes(double prevAccelX, double prevAccelY, double prevAccelZ,
+  double currAccelX, double currAccelY, double currAccelZ) {
+  return zThresh(currAccelZ) || zDiff(prevAccelZ, currAccelZ);
+}
+
+Tuple2<double, double> biAxialLowpassFilter(prevLat, prevLong, currLat, currLong) {
+  const double smoothingParam = 0.9;
+
+  //Low-Pass Filter
+  double filteredLat = (currLat * smoothingParam) + prevLat * (1 - smoothingParam);
+  double filteredLong = (currLong * smoothingParam) + prevLong * (1 - smoothingParam);
+
+  filteredLat = double.parse(filteredLat.toStringAsPrecision(9));
+  filteredLong = double.parse(filteredLong.toStringAsPrecision(9));
+  
+  return Tuple2<double, double>(filteredLat, filteredLong);
+}
+
+Tuple3<double, double, double> triAxialHighpassFilter(double prevReadX, double prevReadY, double prevReadZ,
     double currReadX, double currReadY, double currReadZ) {
 
   const double smoothingParam = 0.8;
@@ -62,7 +80,7 @@ double computeSpeed(double prevLat, double prevLong, double currLat,
   // return calibratedSpeed < 0 ? 0 : calibratedSpeed;
 
   final double distance = distanceHaversine(prevLat, prevLong, currLat, currLong);
-  return distance / (timeInterval / 3600);  
+  return distance / (timeInterval / 3600);
 }
 
 // Llevar de grados a radianes
@@ -97,19 +115,28 @@ double distanceHaversine(double lat1, double long1, double lat2, double long2) {
 // Heurísticas para determinar baches 
 
 bool gZero(double currAccelX, double currAccelY, double currAccelZ,) {
-  const double thresh = 0.5;
+  const double thresh = 10;
 
   return currAccelX.abs() < thresh && currAccelY.abs() < thresh && currAccelZ.abs() < thresh;
  }
 
+bool zThresh(double zAccel) {
+  const double threshold = 10;
+  return zAccel.abs() > threshold;
+}
+
+bool zDiff(double prevAccelZ, double currAccelZ) {
+  const double threshold = 10;
+  return (currAccelZ - prevAccelZ).abs() > threshold;
+}
+
 bool potholePatrol(double currSpeed, double currAccelX, double currAccelY, double currAccelZ,
   double prevAccelX, double prevAccelY, double prevAccelZ) {
   const double speedThresh = 15;
-  const double zAccelThresh = 0.4;
   const double xzAccelRatio = 5;
   const double speedZRatio = 5;
 
-  if (currSpeed < speedThresh || !zThresh(currAccelZ, zAccelThresh) 
+  if (currSpeed < speedThresh || !zThresh(currAccelZ) 
       || currAccelX/currAccelZ < xzAccelRatio || currAccelZ/currSpeed < speedZRatio) {
 
       return false;
@@ -117,9 +144,3 @@ bool potholePatrol(double currSpeed, double currAccelX, double currAccelY, doubl
 
   return true;
 }
-
-bool zThresh(double zAccel, double threshold) =>
-    zAccel.abs() > threshold;
-
-bool zDiff(double prevAccelZ, double currAccelZ, double threshold) => 
-  (currAccelZ - prevAccelZ).abs() > threshold;

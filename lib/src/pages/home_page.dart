@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:flutter/services.dart';
 
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
@@ -42,7 +43,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late GyroscopeEvent _gyroEvent;
   late UserAccelerometerEvent _accelEvent;
 
-  bool _scanning = false; // Para saber si la app está escaneando o no
+  bool _scanning = false;
+  bool _bumpDetected = false; // Para saber si la app está escaneando o no
 
   @override
   void initState() {
@@ -51,15 +53,36 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Métodos auxiliares
 
-  Tuple3<double, double, double> updateGyroData (double currReadX, double currReadY, double currReadZ) {
-    if (_gyroRead.length == 1000) {
-      _gyroRead.removeAt(0);
-      return Tuple3<double, double, double>(currReadX, currReadY, currReadZ);
+  Tuple2<double, double> updateGeoData(double currLat, currLong, prevLat, prevLong) {
+    if (_geoLoc.length == 1000) {
+      _geoLoc.removeAt(0);
     }
 
-    else {
-      return Tuple3<double, double, double>(currReadX, currReadY, currReadZ);
+    late double currSpeed;
+    if (_geoLoc.length > 1) {
+      var currSpeed = _updateSpeedRead(prevLat, prevLong, currLat, currLong);
+      
+      if (_speedRead.isEmpty) {
+        currSpeed = currSpeed * 0.1;
+      }
+      else {
+        currSpeed = _speedRead.last * 0.9 + currSpeed * 0.1;
+      }
+
+      currSpeed = double.parse(currSpeed.toStringAsPrecision(6));
+      _speedRead.add(currSpeed);
     }
+
+    return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
+  }
+
+  Tuple3<double, double, double> updateGyroData (double currReadX, double currReadY, double currReadZ,
+    double prevReadX, double prevReadY, double prevReadZ) {
+    if (_gyroRead.length == 1000) {
+      _gyroRead.removeAt(0);
+    }
+
+    return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
   }
 
   Tuple3<double, double, double> updateAccelData (double currReadX, double currReadY, double currReadZ,
@@ -67,12 +90,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (_accelRead.length == 1000) {
       _accelRead.removeAt(0);
-      return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
     }
-
-    else {
-      return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
-    }
+    
+    return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
   }
 
   double _updateSpeedRead (double prevLat, double prevLong, double currLat, double currLong) {
@@ -80,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _speedRead.removeAt(0);
     }
 
-    final double currSpeed = computeSpeed(prevLat, prevLong, currLat, currLong, (_accelReadIntervals / 1000));
+    final double currSpeed = computeSpeed(prevLat, prevLong, currLat, currLong, (_geoLocReadIntervals / 1000));
     return double.parse(currSpeed.toStringAsPrecision(5));
   }
 
@@ -110,12 +130,12 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_scanning) {
       _accelTimer = Timer.periodic(
           const Duration(milliseconds: _accelReadIntervals), (timer) {
-          _updateAccelRelatedDataOutput();
-          _updateGyroDataOutput();
+          _updateFilterAccelData();
+          _updateFilterGyroData();
         });
       _geoLocTimer =  Timer.periodic(
           const Duration(milliseconds: _geoLocReadIntervals), (timer) {
-          _getGeoLocationPosition();
+          _updateFilterGeoData();
         });
 
       if (_streamSubscriptions.isEmpty) {
@@ -149,7 +169,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
-  Future<void> _getGeoLocationPosition() async {
+  Future<void> _updateFilterGeoData() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -183,36 +203,36 @@ class _MyHomePageState extends State<MyHomePage> {
     Position newRead = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high);
 
-    double currLat = double.parse(newRead.latitude.toStringAsPrecision(5));
-    double currLong = double.parse(newRead.longitude.toStringAsPrecision(5));
+    // double currLat = double.parse(newRead.latitude.toStringAsPrecision(10));
+    // double currLong = double.parse(newRead.longitude.toStringAsPrecision(10));
+
+    final double prevLat = _geoLoc.isEmpty ? 0 : _geoLoc.last!.latitude;
+    final double prevLong = _geoLoc.isEmpty ? 0 : _geoLoc.last!.longitude;
+
+    var newGeoFilt = Tuple2<double, double>(newRead.latitude, newRead.longitude);
+
+    if (prevLat != 0 && prevLong != 0) {
+      newGeoFilt = updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+    }
     // Actualizar lecturas de velocidad y coordenadas.
 
-    late double currSpeed;
-    
-    if (_geoLoc.length > 1) {
-      double prevLat = _geoLoc.last!.latitude;
-      double prevLong = _geoLoc.last!.longitude;
-      currSpeed = _updateSpeedRead(prevLat, prevLong, currLat, currLong);
-      _speedRead.add(currSpeed);
-    }
-
-      newRead = Position(
-      longitude: currLong, 
-      latitude: currLat, 
+    final readFiltered = Position(
+      latitude: newGeoFilt.item1,
+      longitude: newGeoFilt.item2,
       timestamp: newRead.timestamp,
       accuracy: newRead.accuracy,
       altitude: newRead.altitude,
       heading: newRead.heading,
       speed: newRead.speed,
-      speedAccuracy: newRead.speedAccuracy
-      );
-  
+      speedAccuracy: newRead.speedAccuracy,
+    );
+
     setState(() {
-      _geoLoc.add(newRead);
+      _geoLoc.add(readFiltered);
     });
   }
 
-  Future<void> _updateAccelRelatedDataOutput() async { // Obtener lecturas del giroscopio y acelerómetro
+  Future<void> _updateFilterAccelData() async { // Obtener lecturas del giroscopio y acelerómetro
     final double currReadX = double.parse(_accelEvent.x.toStringAsPrecision(6));
     final double currReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
     final double currReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
@@ -221,24 +241,32 @@ class _MyHomePageState extends State<MyHomePage> {
     final double prevReadY = _accelRead.isEmpty ? 0 : _accelRead.last.item2;
     final double prevReadZ = _accelRead.isEmpty ? 0 : _accelRead.last.item3;
 
+    final newAccelFilt = updateAccelData(currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ);
+
     setState(() {
-      final newAccelRead = triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
-      _accelRead.add(newAccelRead);
+      _accelRead.add(newAccelFilt);
+      if (prevReadX != 0) {
+        _bumpDetected = scanPotholes(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+        if (_bumpDetected) {
+          HapticFeedback.vibrate();
+        }
+      }
     });
   }
 
-  Future<void> _updateGyroDataOutput () async {
+  Future<void> _updateFilterGyroData() async {
     final double currReadX = double.parse(_gyroEvent.x.toStringAsPrecision(6));
     final double currReadY = double.parse(_gyroEvent.y.toStringAsPrecision(6));
     final double currReadZ = double.parse(_gyroEvent.z.toStringAsPrecision(6));
 
-    final double prevReadX = _gyroRead.isNotEmpty ? 0 : _gyroRead.last.item1;
-    final double prevReadY = _gyroRead.isNotEmpty ? 0 : _gyroRead.last.item2;
-    final double prevReadZ = _gyroRead.isNotEmpty ? 0 : _gyroRead.last.item3;
+    final double prevReadX = _gyroRead.isEmpty ? 0 : _gyroRead.last.item1;
+    final double prevReadY = _gyroRead.isEmpty ? 0 : _gyroRead.last.item2;
+    final double prevReadZ = _gyroRead.isEmpty ? 0 : _gyroRead.last.item3;
+
+    final newGyroFilt = updateGyroData(currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ);
     
     setState(() {
-      final newGyroRead = triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
-      _gyroRead.add(newGyroRead);
+      _gyroRead.add(newGyroFilt);
     });
   }
 
@@ -464,7 +492,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Text(
                   _geoLoc.isNotEmpty
                     ? '${_geoLoc.last?.latitude}'
-                    : 'Empty List',
+                    : 'None',
                   style: const TextStyle(
                     fontSize: 20,
                     color: Colors.purple
@@ -484,7 +512,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Text(
                   _geoLoc.isNotEmpty
                     ? '${_geoLoc.last?.longitude}' 
-                    : 'Empty List',
+                    : 'None',
                   style: const TextStyle(
                     fontSize: 20,
                     color: Colors.purple
@@ -493,6 +521,26 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ]
+        ),
+        const SizedBox(
+              height: 20,
+        ),
+        const Text(
+                  'Bump Detected', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+        ),
+        Text(
+              _bumpDetected 
+                ? 'Yes'
+                : 'No', 
+              style: TextStyle(
+                fontSize: 40,
+                color: _bumpDetected 
+                  ? Colors.redAccent.shade700
+                  : Colors.greenAccent.shade700
+              ),
         ),
       ]
     );

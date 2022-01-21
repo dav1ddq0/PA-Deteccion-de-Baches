@@ -1,3 +1,4 @@
+import 'package:deteccion_de_baches/src/pages/map_page.dart';
 import 'package:flutter/material.dart';
 
 import 'package:deteccion_de_baches/src/pages/social_media_page.dart';
@@ -8,6 +9,7 @@ Map<String, WidgetBuilder> getAppRoutes() {
   return <String, WidgetBuilder>{
     '/': (BuildContext context) => MyHomePage(title: 'Bump Record2'),
     '/info': (BuildContext context) => InfoPage(),
-    '/socialmedia': (BuildContext context) => SocialMediaPage()
+    '/socialmedia': (BuildContext context) => SocialMediaPage(),
+    'map': (BuildContext context) => MapPage()
   };
 }
