@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:flutter/services.dart';
 
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
@@ -26,20 +28,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<StreamSubscription<dynamic>> _streamSubscriptions = <StreamSubscription<dynamic>>[];
-  late Timer _timer;
 
+  static const int _accelReadIntervals = 100;
+  static const int _geoLocReadIntervals = 1000;
+
+  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
+  final List<Position?> _geoLoc = [];
+  final List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
+  final List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
+  final List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
+
+  late Timer _accelTimer;
+  late Timer _geoLocTimer;
   late GyroscopeEvent _gyroEvent;
-  late AccelerometerEvent _accelEvent;
-  
-  List<Tuple3<double, double, double>> _accelRead = []; // Serie temporal acelerómetro
-  List<Tuple3<double, double, double>> _gyroRead = []; // Serie temporal giroscopio
-  
-  List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
-  List<int> _states = []; // Estados del vehículo, puede estar parado (0) o en movimiento (1)
-  List<int> _changePointsIndexes = []; // Para saber cual de los estados representa un punto de cambio (frenar o comenzar a moverse)
-  bool _motion = false; // Para saber si el teléfono se encuentra en un vehículo en movimiento
-  bool _scanning = false; // Para saber si la app está escaneando o no
+  late UserAccelerometerEvent _accelEvent;
+
+  bool _scanning = false;
+  bool _bumpDetected = false; // Para saber si la app está escaneando o no
 
   @override
   void initState() {
@@ -48,89 +53,61 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Métodos auxiliares
 
-  void updateAccelRelatedData (double accelReadX, double accelReadY, double accelReadZ, 
-    double previousAccelX, double previousAccelY, double previousAccelZ, double previousSpeed) {
-    
-    var newAccel = updateAccel(accelReadX, accelReadY, accelReadY);
-    var newMotion = detectMotion(_states, previousAccelX, previousAccelY, previousAccelZ, accelReadX, accelReadY, accelReadZ);
-    _accelRead = [..._accelRead, newAccel];
-    _motion = newMotion;
+  Tuple2<double, double> updateGeoData(double currLat, currLong, prevLat, prevLong) {
+    if (_geoLoc.length == 1000) {
+      _geoLoc.removeAt(0);
+    }
 
-    var newState = _updateStates();
-    _states = [..._states, newState];
-
-    var newChangePointIndex = _updateChangePointsIndex();
-    var newSpeed = _updateSpeedRead(previousSpeed, accelReadY);
-    
-    setState(() {
-      _changePointsIndexes = newChangePointIndex == -1 ? _changePointsIndexes : [..._changePointsIndexes,  newChangePointIndex];
-
-      if (_motion) {
-        _speedRead = [..._speedRead, newSpeed];
+    late double currSpeed;
+    if (_geoLoc.length > 1) {
+      var currSpeed = _updateSpeedRead(prevLat, prevLong, currLat, currLong);
+      
+      if (_speedRead.isEmpty) {
+        currSpeed = currSpeed * 0.1;
       }
       else {
-      _speedRead = [..._speedRead, 0];
+        currSpeed = _speedRead.last * 0.9 + currSpeed * 0.1;
       }
-    });
+
+      currSpeed = double.parse(currSpeed.toStringAsPrecision(6));
+      _speedRead.add(currSpeed);
+    }
+
+    return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
   }
 
-  Tuple3<double, double, double> updateAccel (double currentReadX, double currentReadY, double currentReadZ) {
+  Tuple3<double, double, double> updateGyroData (double currReadX, double currReadY, double currReadZ,
+    double prevReadX, double prevReadY, double prevReadZ) {
+    if (_gyroRead.length == 1000) {
+      _gyroRead.removeAt(0);
+    }
+
+    return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+  }
+
+  Tuple3<double, double, double> updateAccelData (double currReadX, double currReadY, double currReadZ,
+    double prevReadX, double prevReadY, double prevReadZ) {
+
     if (_accelRead.length == 1000) {
       _accelRead.removeAt(0);
-      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
     }
-
-    else {
-      return Tuple3<double, double, double>(currentReadX, currentReadY, currentReadZ);
-    }
+    
+    return triAxialHighpassFilter(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
   }
 
-  int _updateStates () {
-    if (_states.length == 1000) {
-        _states.removeAt(0);
-        return _motion == true ? 1 : 0;
-    }
-
-    else {
-      return _motion == true ? 1 : 0;
-    }
-  }
-
-  double _updateSpeedRead (double previousSpeed, double currentReadY) {
+  double _updateSpeedRead (double prevLat, double prevLong, double currLat, double currLong) {
     if (_speedRead.length == 1000) {
       _speedRead.removeAt(0);
-      if (_motion) {
-        return double.parse(speedEstKinetic(previousSpeed, currentReadY, 0.1).toStringAsPrecision(8));
-      }
-
-      else {
-        return 0;
-      }
     }
 
-    else {
-      return _motion ? double.parse(speedEstKinetic(previousSpeed, currentReadY, 1).toStringAsPrecision(8)) : 0;
-    }
-  }
-  
-  int _updateChangePointsIndex() {
-    if (_states.length > 2) {
-      if (_changePointsIndexes.length == 999) {
-        _changePointsIndexes.removeAt(0);
-        return lastStateIsChangePoint(_states, _changePointsIndexes);
-      }
-
-      else {
-        return lastStateIsChangePoint(_states, _changePointsIndexes);
-      }
-    }
-    return -1;
+    final double currSpeed = computeSpeed(prevLat, prevLong, currLat, currLong, (_geoLocReadIntervals / 1000));
+    return double.parse(currSpeed.toStringAsPrecision(5));
   }
 
   void subscribeAccelEventListener () {
     _streamSubscriptions.add(
-      accelerometerEvents.listen(
-        (AccelerometerEvent event) {
+      userAccelerometerEvents.listen(
+        (UserAccelerometerEvent event) {
           setState(() {
            _accelEvent = event;
           });
@@ -139,25 +116,33 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void subscribeGyroEventListener () {
     _streamSubscriptions.add(
-     gyroscopeEvents.listen(
-       (GyroscopeEvent event) {
-         setState(() {
+      gyroscopeEvents.listen(
+        (GyroscopeEvent event) {
+          setState(() {
            _gyroEvent = event;
-         });
-       }));
+          });
+        }));
   }
+
+  // Métodos activados por onPressed
 
   void _switchTimerAndEvents () {
     if (_scanning) {
-      _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-          _updateAccelRelatedDataOutput();
-          _updateGyroDataOutput();
+      _accelTimer = Timer.periodic(
+          const Duration(milliseconds: _accelReadIntervals), (timer) {
+          _updateFilterAccelData();
+          _updateFilterGyroData();
+        });
+      _geoLocTimer =  Timer.periodic(
+          const Duration(milliseconds: _geoLocReadIntervals), (timer) {
+          _updateFilterGeoData();
         });
 
       if (_streamSubscriptions.isEmpty) {
         subscribeAccelEventListener();
         subscribeGyroEventListener();
       }
+
 
       else {
         for (var subscription in _streamSubscriptions) {
@@ -167,13 +152,14 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     else {
-      _timer.cancel();
+      _geoLocTimer.cancel();
+      _accelTimer.cancel();
       for (var subscription in _streamSubscriptions) {
         subscription.pause();
       }
     }
   }
-  // Métodos activados por onPressed
+
   void _switchScanning () {
     setState(() {
       _scanning = !_scanning;
@@ -181,44 +167,110 @@ class _MyHomePageState extends State<MyHomePage> {
     _switchTimerAndEvents();
   }
 
-  Future<void> _updateAccelRelatedDataOutput() async { // Obtener lecturas del giroscopio y acelerómetro
-    final double currentReadX = double.parse(_accelEvent.x.toStringAsPrecision(6));
-    final double currentReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
-    final double currentReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
+  // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
-    if (_accelRead.isNotEmpty) {
-      final double previousReadX = _accelRead[_accelRead.length - 1].item1;
-      final double previousReadY = _accelRead[_accelRead.length - 1].item2;
-      final double previousReadZ = _accelRead[_accelRead.length - 1].item3;
+  Future<void> _updateFilterGeoData() async {
+    bool serviceEnabled;
+    LocationPermission permission;
 
-      if(_speedRead.isNotEmpty) {
-        final double previousSpeed = _speedRead[_speedRead.length - 1];                
-        updateAccelRelatedData(currentReadX, currentReadY, currentReadZ, previousReadX, previousReadY, previousReadZ, previousSpeed);
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+      
+        return Future.error('Location permissions are denied');
       }
     }
-    else {
-      setState(() {
-        var newAccelRead = updateAccel(currentReadX, currentReadY, currentReadZ);
-        _accelRead = [..._accelRead, newAccelRead];
-        _states = [0];
-        _speedRead = [..._speedRead, 0];
-      });
-    }
-  }
 
-  Future<void> _updateGyroDataOutput () async {
-    final double previousReadX = _gyroRead[_gyroRead.length - 1].item1;
-    final double previousReadY = _gyroRead[_gyroRead.length - 1].item2;
-    final double previousReadZ = _gyroRead[_gyroRead.length - 1].item3;
-    if (_gyroRead[0].item1 == 0 ||_gyroRead.length == 1000) {
-      _gyroRead.removeAt(0);
-      _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
-    }
-    else {
-      _gyroRead.add(Tuple3<double, double, double>(_gyroEvent.x, _gyroEvent.y, _gyroEvent.z));
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
     }
 
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    Position newRead = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high);
+
+    // double currLat = double.parse(newRead.latitude.toStringAsPrecision(10));
+    // double currLong = double.parse(newRead.longitude.toStringAsPrecision(10));
+
+    final double prevLat = _geoLoc.isEmpty ? 0 : _geoLoc.last!.latitude;
+    final double prevLong = _geoLoc.isEmpty ? 0 : _geoLoc.last!.longitude;
+
+    var newGeoFilt = Tuple2<double, double>(newRead.latitude, newRead.longitude);
+
+    if (prevLat != 0 && prevLong != 0) {
+      newGeoFilt = updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+    }
+    // Actualizar lecturas de velocidad y coordenadas.
+
+    final readFiltered = Position(
+      latitude: newGeoFilt.item1,
+      longitude: newGeoFilt.item2,
+      timestamp: newRead.timestamp,
+      accuracy: newRead.accuracy,
+      altitude: newRead.altitude,
+      heading: newRead.heading,
+      speed: newRead.speed,
+      speedAccuracy: newRead.speedAccuracy,
+    );
+
+    setState(() {
+      _geoLoc.add(readFiltered);
+    });
   }
+
+  Future<void> _updateFilterAccelData() async { // Obtener lecturas del giroscopio y acelerómetro
+    final double currReadX = double.parse(_accelEvent.x.toStringAsPrecision(6));
+    final double currReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
+    final double currReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
+
+    final double prevReadX = _accelRead.isEmpty ? 0 : _accelRead.last.item1;
+    final double prevReadY = _accelRead.isEmpty ? 0 : _accelRead.last.item2;
+    final double prevReadZ = _accelRead.isEmpty ? 0 : _accelRead.last.item3;
+
+    final newAccelFilt = updateAccelData(currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ);
+
+    setState(() {
+      _accelRead.add(newAccelFilt);
+      if (prevReadX != 0) {
+        _bumpDetected = scanPotholes(prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+        if (_bumpDetected) {
+          HapticFeedback.vibrate();
+        }
+      }
+    });
+  }
+
+  Future<void> _updateFilterGyroData() async {
+    final double currReadX = double.parse(_gyroEvent.x.toStringAsPrecision(6));
+    final double currReadY = double.parse(_gyroEvent.y.toStringAsPrecision(6));
+    final double currReadZ = double.parse(_gyroEvent.z.toStringAsPrecision(6));
+
+    final double prevReadX = _gyroRead.isEmpty ? 0 : _gyroRead.last.item1;
+    final double prevReadY = _gyroRead.isEmpty ? 0 : _gyroRead.last.item2;
+    final double prevReadZ = _gyroRead.isEmpty ? 0 : _gyroRead.last.item3;
+
+    final newGyroFilt = updateGyroData(currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ);
+    
+    setState(() {
+      _gyroRead.add(newGyroFilt);
+    });
+  }
+
+  // Método para construir el Widget
 
   @override
   Widget build(BuildContext context) {
@@ -227,11 +279,6 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Bump Record'),
       ),
       body: _createHomePageItems(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'reload',
-        child: const Icon(Icons.refresh),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 
@@ -288,6 +335,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _createAxisInfoItems(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         ElevatedButton(
           style: ElevatedButton.styleFrom(
@@ -309,121 +357,192 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontWeight: FontWeight.bold)),
           onPressed: _switchScanning
         ),
-        const ListTile(
-          title: Text('Y axis acceleration is:'),
-          leading: Icon(Icons.arrow_circle_down),
+        const SizedBox(
+              height: 10,
+            ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Text(
+                  'Y axis accel is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _accelRead.isEmpty 
+                    ? 'None' 
+                    : '${_accelRead.last.item2}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              children: [
+                const Text(
+                  'Z axis accel is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _accelRead.isEmpty 
+                    ? 'None' 
+                    : '${_accelRead.last.item3}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+          ]
+        ),
+      
+        Column(
+          children: [
+            const ListTile(
+              leading: Icon(Icons.speed),
+              title: Text(
+                'curr speed',
+                style: TextStyle(
+                  fontSize: 24
+                ),
+              ),
+            ),
+
+            Text(
+              _speedRead.isEmpty
+                ? 'None' 
+                : '${_speedRead.last} km/h',
+              style: TextStyle(
+                fontSize: 40,
+                color: _speedRead.isEmpty
+                  ? Colors.blueAccent
+                  : Colors.amber
+              ),
+            ),
+          ],
+        ),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Text(
+                  'Y axis gyro is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _gyroRead.isEmpty 
+                    ? 'None' 
+                    : '${_gyroRead.last.item2}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              children: [
+                const Text(
+                  'Z axis gyro is', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _gyroRead.isEmpty
+                    ? 'None' 
+                    : '${_gyroRead.last.item3}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+          ]
+        ),
+        const SizedBox(
+              height: 10,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Text(
+                  'Latitude', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _geoLoc.isNotEmpty
+                    ? '${_geoLoc.last?.latitude}'
+                    : 'None',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+
+            Column(
+              children: [
+                const Text(
+                  'Longitude', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
+                ),
+                Text(
+                  _geoLoc.isNotEmpty
+                    ? '${_geoLoc.last?.longitude}' 
+                    : 'None',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    color: Colors.purple
+                  ),
+                ),
+              ],
+            ),
+          ]
+        ),
+        const SizedBox(
+              height: 20,
+        ),
+        const Text(
+                  'Bump Detected', 
+                  style: TextStyle(
+                    fontSize: 24
+                  ),
         ),
         Text(
-          _accelRead.isEmpty 
-            ? 'None' 
-            : '${_accelRead[_accelRead.length - 1].item2}',
-          style: Theme.of(context).textTheme.headline4,
+              _bumpDetected 
+                ? 'Yes'
+                : 'No', 
+              style: TextStyle(
+                fontSize: 40,
+                color: _bumpDetected 
+                  ? Colors.redAccent.shade700
+                  : Colors.greenAccent.shade700
+              ),
         ),
-        const ListTile(
-          title: Text('Current state is change point ??'),
-          leading: Icon(Icons.star_rate_outlined),
-        ),
-        Text(
-          _changePointsIndexes.isNotEmpty
-            ? _states.length - 1 == _changePointsIndexes[_changePointsIndexes.length - 1]
-              ? 'YES' 
-              : 'NO'
-            : 'List Empty',
-          style: TextStyle(color: _changePointsIndexes.isNotEmpty
-            ? _states.length - 1 == _changePointsIndexes[_changePointsIndexes.length - 1]
-              ? Colors.green.shade900
-              : Colors.red.shade900
-            : Colors.amber.shade900, fontSize: 30),
-        ),
-        const ListTile(
-          title: Text('Current speed'),
-          leading: Icon(Icons.speed),
-        ),
-        Text(
-          _speedRead.isEmpty
-            ? 'None' 
-            : '${_speedRead[_speedRead.length - 1]} km/h',
-          style: Theme.of(context).textTheme.headline4,
-        ),
-        Text(
-          _motion 
-            ? 'In motion'
-            : 'Steady', 
-          style: TextStyle(
-              color: _motion 
-                ? Colors.green.shade900
-                : Colors.red.shade900)
-        )
-      ],
+      ]
     );
   }
 }
-
-// class HomePage extends StatefulWidget {
-//   @override
-//   createState() => _HomePageState();
-// }
-
-// class _HomePageState extends State<HomePage> {
-//   final TextStyle _my_style = new TextStyle(fontSize: 25);
-//   int _count = 10;
-
-//   void _increase_counter() {
-//     setState(() {
-//       _count++;
-//     });
-//   }
-
-//   void _decrease_counter() {
-//     setState(() {
-//       _count--;
-//     });
-//   }
-
-//   void _counter_to_zero() {
-//     setState(() {
-//       _count = 0;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//         appBar: AppBar(
-//           title: Text('Bump Record'),
-//           centerTitle: true,
-//         ),
-//         body: Center(
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: <Widget>[
-//               Text('Amount of clicks:', style: _my_style),
-//               Text('$_count', style: _my_style)
-//             ],
-//           )
-//         ),
-//         floatingActionButton: createButtons()
-//     );
-//   }
-
-//   Widget createButtons() {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.end,
-//       children: <Widget>[
-//         SizedBox(width: 30),
-//         FloatingActionButton(
-//             child: Icon(Icons.exposure_zero), onPressed: _counter_to_zero
-//             ),
-//         Expanded(
-//           child: SizedBox()
-//           ),
-//         FloatingActionButton(
-//             child: Icon(Icons.remove), onPressed: _decrease_counter
-//             ),
-//         FloatingActionButton(
-//             child: Icon(Icons.add), onPressed: _increase_counter
-//             ),
-//       ],
-//     );
-//   }
-// }
