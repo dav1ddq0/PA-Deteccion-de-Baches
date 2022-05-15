@@ -41,6 +41,7 @@ dependencies:
   latlong2: ^0.8.1
   sorted_list: ^1.0.0
   decimal: ^2.1.0
+  path_provider: ^2.0.10
 
 dev_dependencies:
   flutter_test:
