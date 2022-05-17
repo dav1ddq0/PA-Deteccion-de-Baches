@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
 import 'package:deteccion_de_baches/src/utils/icon_string.dart';
+import 'package:deteccion_de_baches/src/pages/saved_data.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
@@ -44,7 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late Timer _geoLocTimer;
   late GyroscopeEvent _gyroEvent;
   late UserAccelerometerEvent _accelEvent;
-
+  JData data_prueba = JData();
   bool _scanning = false;
   bool _bumpDetected = false; // Para saber si la app está escaneando o no
 
@@ -377,7 +378,8 @@ class _MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              _accelRead.isEmpty ? 'None' : '${_accelRead.last.item2}',
+              //   _accelRead.isEmpty ? 'None' : '${_accelRead.last.item2}',
+              _accelRead.isEmpty ? 'None' : '${data_prueba.localPath}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -470,18 +472,18 @@ class _MyHomePageState extends State<MyHomePage> {
       const SizedBox(
         height: 20,
       ),
-      const Text(
-        'Bump Detected',
-        style: TextStyle(fontSize: 24),
-      ),
-      Text(
-        _bumpDetected ? 'Yes' : 'No',
-        style: TextStyle(
-            fontSize: 40,
-            color: _bumpDetected
-                ? Colors.redAccent.shade700
-                : Colors.greenAccent.shade700),
-      ),
+      //   const Text(
+      //     'Bump Detected',
+      //     style: TextStyle(fontSize: 24),
+      //   ),
+      //   Text(
+      //     _bumpDetected ? 'Yes' : 'No',
+      //     style: TextStyle(
+      //         fontSize: 40,
+      //         color: _bumpDetected
+      //             ? Colors.redAccent.shade700
+      //             : Colors.greenAccent.shade700),
+      //   ),
     ]);
   }
 }

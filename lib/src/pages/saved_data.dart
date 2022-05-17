@@ -25,9 +25,15 @@ class JData {
   }
   File createFile(Map<String, int> content) {
     File file = File(dir.path + "/" + fileName);
-    file.copySync();
+    // file.copySync();
     fileExists = true;
     file.writeAsStringSync(json.encode(content));
     return file;
+  }
+
+  Future<String> get localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    print(directory.path);
+    return directory.path;
   }
 }
