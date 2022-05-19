@@ -42,6 +42,7 @@ dependencies:
   sorted_list: ^1.0.0
   decimal: ^2.1.0
   path_provider: ^2.0.10
+  permission_handler: ^9.2.0
 
 dev_dependencies:
   flutter_test:

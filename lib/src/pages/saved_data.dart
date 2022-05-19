@@ -9,6 +9,9 @@ class JData {
   String fileName = "myjson.json";
   bool fileExists = false;
   late Map<String, int> fileContent;
+  late String path;
+  final String dataPath =
+      '/storage/emulated/0/bump_data'; // path where json data is stored
 
   JData() {
     getApplicationDocumentsDirectory().then((Directory directory) {
@@ -32,8 +35,27 @@ class JData {
   }
 
   Future<String> get localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-    print(directory.path);
-    return directory.path;
+    // Directory appDocumentsDirectory = await getApplicationDocumentsDirectory();
+    Directory? appDocumentsDirectory = await getExternalStorageDirectory();
+    String? appDocumentsPath = appDocumentsDirectory?.path;
+    String filePath = '$appDocumentsPath/demoTextFile.txt';
+    return filePath;
+  }
+
+  Future<File> get templocalFile async {
+    // final path = await localPath;
+    final newfile = File('$dataPath/fif.txt');
+    //Need copy some of info to test
+    newfile.writeAsString('Bumps....');
+
+    return newfile;
+  }
+
+  Future<void> createBumpFolder() async {
+    final path = Directory(dataPath);
+    print(path);
+    if (!(await path.exists())) {
+      path.create();
+    }
   }
 }

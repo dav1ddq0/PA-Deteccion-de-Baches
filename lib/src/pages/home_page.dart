@@ -4,6 +4,7 @@ import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
@@ -31,6 +32,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   static const int _accelReadIntervals = 100;
   static const int _geoLocReadIntervals = 1000;
+  String cp = 'None';
 
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   final List<Position?> _geoLoc = [];
@@ -172,10 +174,40 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _scanning = !_scanning;
     });
+
+    data_prueba.localPath.then((value) {
+      setState(() {
+        cp = value;
+
+        _grantStoragePermissions();
+        data_prueba.createBumpFolder();
+        data_prueba.templocalFile;
+        print(cp);
+      });
+    });
     _switchTimerAndEvents();
   }
 
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
+  Future<void> _grantStoragePermissions() async {
+    var storage_status = await Permission.storage.status;
+    var media_location_status = await Permission.accessMediaLocation.status;
+    var external_storage_status = await Permission.manageExternalStorage.status;
+    if (!storage_status.isGranted) {
+      await Permission.storage.request();
+    }
+
+    if (!storage_status.isGranted) {
+      await Permission.storage.request();
+    }
+    if (!media_location_status.isGranted) {
+      await Permission.accessMediaLocation.request();
+    }
+
+    if (!external_storage_status.isGranted) {
+      await Permission.manageExternalStorage.request();
+    }
+  }
 
   Future<void> _updateFilterGeoData() async {
     bool serviceEnabled;
@@ -379,7 +411,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Text(
               //   _accelRead.isEmpty ? 'None' : '${_accelRead.last.item2}',
-              _accelRead.isEmpty ? 'None' : '${data_prueba.localPath}',
+              //   _accelRead.isEmpty
+              cp == 'None' ? 'No hay path' : cp,
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
