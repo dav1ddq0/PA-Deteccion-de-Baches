@@ -3,6 +3,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+import 'package:tuple/tuple.dart';
+
 class JData {
   late File jsonFile;
   late Directory dir;
@@ -26,6 +28,21 @@ class JData {
       }
     });
   }
+
+  // Map<String, List> getJsonData(File file) {
+
+  // }
+
+  File saveToJson(List<Tuple3<double, double, double>> records) {
+    final File jsonFile = File('$dataPath/bumps.json');
+    if (jsonFile.existsSync()) {}
+    final Map<String, List<Tuple3>> data =
+        Map<String, List<Tuple3<double, double, double>>>();
+    data['accel'] = records;
+    jsonFile.writeAsStringSync(json.encode(data));
+    return jsonFile;
+  }
+
   File createFile(Map<String, int> content) {
     File file = File(dir.path + "/" + fileName);
     // file.copySync();
@@ -42,20 +59,21 @@ class JData {
     return filePath;
   }
 
-  Future<File> get templocalFile async {
-    // final path = await localPath;
-    final newfile = File('$dataPath/fif.txt');
-    //Need copy some of info to test
-    newfile.writeAsString('Bumps....');
-
-    return newfile;
-  }
-
   Future<void> createBumpFolder() async {
     final path = Directory(dataPath);
     print(path);
     if (!(await path.exists())) {
       path.create();
     }
+  }
+
+  Future<File> get templocalFile async {
+    await createBumpFolder();
+    // final path = await localPath;
+    final newfile = File('$dataPath/fif.txt');
+    //Need copy some of info to test
+    newfile.writeAsString('Bumps....');
+
+    return newfile;
   }
 }
