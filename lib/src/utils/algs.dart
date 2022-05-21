@@ -53,7 +53,7 @@ Tuple2<double, double> biAxialLowpassFilter(prevLat, prevLong, currLat, currLong
   return Tuple2<double, double>(filteredLat, filteredLong);
 }
 
-Tuple3<double, double, double> triAxialHighpassFilter(double prevReadX, double prevReadY, double prevReadZ,
+List<double> triAxialHighpassFilter(double prevReadX, double prevReadY, double prevReadZ,
     double currReadX, double currReadY, double currReadZ) {
 
   const double smoothingParam = 0.8;
@@ -68,7 +68,7 @@ Tuple3<double, double, double> triAxialHighpassFilter(double prevReadX, double p
   filteredReadY = double.parse((currReadY - filteredReadY).toStringAsPrecision(6));
   filteredReadZ = double.parse((currReadZ - filteredReadZ).toStringAsPrecision(6));
   
-  return Tuple3<double, double, double>(filteredReadX, filteredReadY, filteredReadZ);
+  return List<double>[filteredReadX, filteredReadY, filteredReadZ];
 }
 
 // Calcular la distancia entre dos coordenadas de latitud-longitud
