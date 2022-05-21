@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'package:tuple/tuple.dart';
 
@@ -33,7 +34,26 @@ class JData {
 
   // }
 
-  File saveToJson(List<Tuple3<double, double, double>> records) {
+  // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
+  Future<void> _grantStoragePermissions() async {
+    var storageStatus = await Permission.storage.status;
+    var mediaLocationStatus = await Permission.accessMediaLocation.status;
+    var externalStorageStatus = await Permission.manageExternalStorage.status;
+    if (!storageStatus.isGranted) {
+      await Permission.storage.request();
+    }
+
+    if (!mediaLocationStatus.isGranted) {
+      await Permission.accessMediaLocation.request();
+    }
+
+    if (!externalStorageStatus.isGranted) {
+      await Permission.manageExternalStorage.request();
+    }
+  }
+
+  Future<File> saveToJson(List<Tuple3<double, double, double>> records) async {
+    await createBumpFolder();
     final File jsonFile = File('$dataPath/bumps.json');
     if (jsonFile.existsSync()) {}
     final Map<String, List<Tuple3>> data =
@@ -43,7 +63,8 @@ class JData {
     return jsonFile;
   }
 
-  File createFile(Map<String, int> content) {
+  Future<File> createFile(Map<String, int> content) async {
+    await _grantStoragePermissions();
     File file = File(dir.path + "/" + fileName);
     // file.copySync();
     fileExists = true;
@@ -60,6 +81,7 @@ class JData {
   }
 
   Future<void> createBumpFolder() async {
+    await _grantStoragePermissions();
     final path = Directory(dataPath);
     print(path);
     if (!(await path.exists())) {

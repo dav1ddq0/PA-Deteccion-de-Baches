@@ -179,36 +179,15 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         cp = value;
 
-        _grantStoragePermissions();
+        // data_prueba.templocalFile;
+        if (_accelRead.isNotEmpty) {
+          data_prueba.saveToJson(_accelRead);
+        }
 
-        data_prueba.templocalFile;
-        print(_accelRead);
-        data_prueba.saveToJson(_accelRead);
         print(cp);
       });
     });
     _switchTimerAndEvents();
-  }
-
-  // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
-  Future<void> _grantStoragePermissions() async {
-    var storage_status = await Permission.storage.status;
-    // var media_location_status = await Permission.accessMediaLocation.status;
-    // var external_storage_status = await Permission.manageExternalStorage.status;
-    if (!storage_status.isGranted) {
-      await Permission.storage.request();
-    }
-
-    // if (!storage_status.isGranted) {
-    //   await Permission.storage.request();
-    // }
-    // if (!media_location_status.isGranted) {
-    //   await Permission.accessMediaLocation.request();
-    // }
-
-    // if (!external_storage_status.isGranted) {
-    //   await Permission.manageExternalStorage.request();
-    // }
   }
 
   Future<void> _updateFilterGeoData() async {
