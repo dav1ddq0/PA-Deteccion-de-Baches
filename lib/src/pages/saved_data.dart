@@ -3,8 +3,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
-
 import 'package:tuple/tuple.dart';
+
+import 'package:deteccion_de_baches/src/pages/accelerometer_data.dart';
 
 class JData {
   late File jsonFile;
@@ -52,13 +53,20 @@ class JData {
     }
   }
 
-  Future<File> saveToJson(List<Tuple3<double, double, double>> records) async {
+  Future<File> saveToJson(List<AccelerometerData> records) async {
     await createBumpFolder();
     final File jsonFile = File('$dataPath/bumps.json');
     if (jsonFile.existsSync()) {}
-    final Map<String, List<Tuple3>> data =
-        Map<String, List<Tuple3<double, double, double>>>();
-    data['accel'] = records;
+
+    final Map<String, List<List<double>>> data =
+        Map<String, List<List<double>>>();
+    List<List<double>> toJsonRecords = [];
+
+    for (AccelerometerData item in records) {
+      toJsonRecords.add(item.values);
+    }
+
+    data['accel'] = toJsonRecords;
     jsonFile.writeAsStringSync(json.encode(data));
     return jsonFile;
   }
