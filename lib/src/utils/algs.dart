@@ -68,7 +68,7 @@ List<double> triAxialHighpassFilter(double prevReadX, double prevReadY, double p
   filteredReadY = double.parse((currReadY - filteredReadY).toStringAsPrecision(6));
   filteredReadZ = double.parse((currReadZ - filteredReadZ).toStringAsPrecision(6));
   
-  return List<double>[filteredReadX, filteredReadY, filteredReadZ];
+  return [filteredReadX, filteredReadY, filteredReadZ];
 }
 
 // Calcular la distancia entre dos coordenadas de latitud-longitud
