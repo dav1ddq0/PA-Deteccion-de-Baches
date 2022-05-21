@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -38,18 +39,30 @@ class JData {
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
   Future<void> _grantStoragePermissions() async {
     var storageStatus = await Permission.storage.status;
-    var mediaLocationStatus = await Permission.accessMediaLocation.status;
-    var externalStorageStatus = await Permission.manageExternalStorage.status;
+
     if (!storageStatus.isGranted) {
       await Permission.storage.request();
     }
 
-    if (!mediaLocationStatus.isGranted) {
-      await Permission.accessMediaLocation.request();
+    // Get device info
+    var androidInfo = await DeviceInfoPlugin().androidInfo;
+    // Get device androids version
+    var release = double.parse(androidInfo.version.release.toString());
+
+    // For Andorid 10 and above
+    if (release >= 10) {
+      var mediaLocationStatus = await Permission.accessMediaLocation.status;
+      if (!mediaLocationStatus.isGranted) {
+        await Permission.accessMediaLocation.request();
+      }
     }
 
-    if (!externalStorageStatus.isGranted) {
-      await Permission.manageExternalStorage.request();
+    //For Android 11 and above
+    if (release >= 11) {
+      var externalStorageStatus = await Permission.manageExternalStorage.status;
+      if (!externalStorageStatus.isGranted) {
+        await Permission.manageExternalStorage.request();
+      }
     }
   }
 
@@ -60,13 +73,8 @@ class JData {
 
     final Map<String, List<List<double>>> data =
         Map<String, List<List<double>>>();
-    List<List<double>> toJsonRecords = [];
-
-    for (AccelerometerData item in records) {
-      toJsonRecords.add(item.values);
-    }
-
-    data['accel'] = toJsonRecords;
+    List<List<double>> toJsonRecords =
+        data['accel'] = [for (AccelerometerData item in records) item.values];
     jsonFile.writeAsStringSync(json.encode(data));
     return jsonFile;
   }
