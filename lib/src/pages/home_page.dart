@@ -6,6 +6,9 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:deteccion_de_baches/src/pages/accelerometer_data.dart';
+import 'package:deteccion_de_baches/src/pages/gyroscope_data.dart';
+import 'package:deteccion_de_baches/src/pages/gps_data.dart';
 import 'package:deteccion_de_baches/src/utils/algs.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
 import 'package:deteccion_de_baches/src/utils/icon_string.dart';
@@ -36,10 +39,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   final List<Position?> _geoLoc = [];
-  final List<Tuple3<double, double, double>> _accelRead =
-      []; // Serie temporal acelerómetro
-  final List<Tuple3<double, double, double>> _gyroRead =
-      []; // Serie temporal giroscopio
+  final List<AccelerometerData> _accelRead = []; // Serie temporal acelerómetro
+  final List<GyroscopeData> _gyroRead = []; // Serie temporal giroscopio
   final List<double> _speedRead =
       []; // Velocidad en cada momento que se realiza una medición en km/h
 
