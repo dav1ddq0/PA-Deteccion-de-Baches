@@ -82,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
   }
 
-  Tuple3<double, double, double> updateGyroData(
+  GyroscopeData updateGyroData(
       double currReadX,
       double currReadY,
       double currReadZ,
@@ -93,11 +93,13 @@ class _MyHomePageState extends State<MyHomePage> {
       _gyroRead.removeAt(0);
     }
 
-    return triAxialHighpassFilter(
+	List<double> filteredData = triAxialHighpassFilter(
         prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+
+    return GyroscopeData(x: filteredData[0], y: filteredData[1], z: filteredData[2]);
   }
 
-  Tuple3<double, double, double> updateAccelData(
+  AccelerometerData updateAccelData(
       double currReadX,
       double currReadY,
       double currReadZ,
@@ -108,8 +110,10 @@ class _MyHomePageState extends State<MyHomePage> {
       _accelRead.removeAt(0);
     }
 
-    return triAxialHighpassFilter(
+	List<double> filteredData = triAxialHighpassFilter(
         prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
+
+    return AccelerometerData(x: filteredData[0], y: filteredData[1], z: filteredData[2]);
   }
 
   double _updateSpeedRead(
@@ -261,9 +265,9 @@ class _MyHomePageState extends State<MyHomePage> {
     final double currReadY = double.parse(_accelEvent.y.toStringAsPrecision(6));
     final double currReadZ = double.parse(_accelEvent.z.toStringAsPrecision(6));
 
-    final double prevReadX = _accelRead.isEmpty ? 0 : _accelRead.last.item1;
-    final double prevReadY = _accelRead.isEmpty ? 0 : _accelRead.last.item2;
-    final double prevReadZ = _accelRead.isEmpty ? 0 : _accelRead.last.item3;
+    final double prevReadX = _accelRead.isEmpty ? 0 : _accelRead.last.x;
+    final double prevReadY = _accelRead.isEmpty ? 0 : _accelRead.last.y;
+    final double prevReadZ = _accelRead.isEmpty ? 0 : _accelRead.last.z;
 
     final newAccelFilt = updateAccelData(
         currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ);
@@ -285,9 +289,9 @@ class _MyHomePageState extends State<MyHomePage> {
     final double currReadY = double.parse(_gyroEvent.y.toStringAsPrecision(6));
     final double currReadZ = double.parse(_gyroEvent.z.toStringAsPrecision(6));
 
-    final double prevReadX = _gyroRead.isEmpty ? 0 : _gyroRead.last.item1;
-    final double prevReadY = _gyroRead.isEmpty ? 0 : _gyroRead.last.item2;
-    final double prevReadZ = _gyroRead.isEmpty ? 0 : _gyroRead.last.item3;
+    final double prevReadX = _gyroRead.isEmpty ? 0 : _gyroRead.last.x;
+    final double prevReadY = _gyroRead.isEmpty ? 0 : _gyroRead.last.y;
+    final double prevReadZ = _gyroRead.isEmpty ? 0 : _gyroRead.last.z;
 
     final newGyroFilt = updateGyroData(
         currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ);
@@ -406,7 +410,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              _accelRead.isEmpty ? 'None' : '${_accelRead.last.item3}',
+              _accelRead.isEmpty ? 'None' : '${_accelRead.last.z}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -437,7 +441,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.item2}',
+              _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.y}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -449,7 +453,7 @@ class _MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.item3}',
+              _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.z}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
