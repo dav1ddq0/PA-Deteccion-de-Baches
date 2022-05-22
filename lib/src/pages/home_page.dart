@@ -41,8 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<Position?> _geoLoc = [];
   final List<AccelerometerData> _accelRead = []; // Serie temporal acelerómetro
   final List<GyroscopeData> _gyroRead = []; // Serie temporal giroscopio
-  final List<double> _speedRead =
-      []; // Velocidad en cada momento que se realiza una medición en km/h
+  final List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
 
   late Timer _accelTimer;
   late Timer _geoLocTimer;
@@ -145,6 +144,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // Métodos activados por onPressed
+
+  void labelAnomaly() {
+
+  }
 
   void _switchTimerAndEvents() {
     if (_scanning) {
@@ -365,144 +368,170 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _createAxisInfoItems(BuildContext context) {
-    return Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            primary: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            elevation: 20,
-          ),
-          child: _scanning
-              ? const Text(
-                  'Scannnig for bumps...Press again if you wish to stop scanning',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold))
-              : const Text('Press here to start scanning for bumps',
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold)),
-          onPressed: _switchScanning),
-      const SizedBox(
-        height: 10,
-      ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        Column(
-          children: [
-            const Text(
-              'Y axis accel is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              //   _accelRead.isEmpty ? 'None' : '${_accelRead.last.item2}',
-              //   _accelRead.isEmpty
-              cp == 'None' ? 'No hay path' : cp,
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-        Column(
-          children: [
-            const Text(
-              'Z axis accel is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              _accelRead.isEmpty ? 'None' : '${_accelRead.last.z}',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-      ]),
-      Column(
-        children: [
-          const ListTile(
-            leading: Icon(Icons.speed),
-            title: Text(
-              'curr speed',
-              style: TextStyle(fontSize: 24),
-            ),
-          ),
-          Text(
-            _speedRead.isEmpty ? 'None' : '${_speedRead.last} km/h',
-            style: TextStyle(
-                fontSize: 40,
-                color: _speedRead.isEmpty ? Colors.blueAccent : Colors.amber),
-          ),
-        ],
-      ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        Column(
-          children: [
-            const Text(
-              'Y axis gyro is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.y}',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-        Column(
-          children: [
-            const Text(
-              'Z axis gyro is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.z}',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-      ]),
-      const SizedBox(
-        height: 10,
-      ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        Column(
-          children: [
-            const Text(
-              'Latitude',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              _geoLoc.isNotEmpty ? '${_geoLoc.last?.latitude}' : 'None',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-        Column(
-          children: [
-            const Text(
-              'Longitude',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              _geoLoc.isNotEmpty ? '${_geoLoc.last?.longitude}' : 'None',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-      ]),
-      const SizedBox(
-        height: 20,
-      ),
-      //   const Text(
-      //     'Bump Detected',
-      //     style: TextStyle(fontSize: 24),
-      //   ),
-      //   Text(
-      //     _bumpDetected ? 'Yes' : 'No',
-      //     style: TextStyle(
-      //         fontSize: 40,
-      //         color: _bumpDetected
-      //             ? Colors.redAccent.shade700
-      //             : Colors.greenAccent.shade700),
-      //   ),
-    ]);
+	MediaQueryData deviceData;
+	deviceData = MediaQuery.of(context);
+
+	double deviceWidth = deviceData.size.width;
+	double deviceHeight = deviceData.size.height;
+	print("AAAAAAAAAAAAAAAAAA $deviceHeight");
+	print("AAAAAAAAAAAAAAAAAA $deviceWidth");
+
+    return AspectRatio(
+	  aspectRatio: deviceWidth/deviceHeight,
+	  child: Column(
+		mainAxisAlignment: MainAxisAlignment.spaceBetween,
+		children: [
+		  ElevatedButton(
+			style: ElevatedButton.styleFrom(
+				primary: Colors.white,
+				padding: const EdgeInsets.symmetric(horizontal: 20),
+				elevation: 20,
+			),
+			child: _scanning
+			  ? const Text(
+				  'Scannnig for bumps...Press again if you wish to stop scanning',
+				  style: TextStyle(
+					color: Colors.black,
+					fontSize: 15,
+					fontWeight: FontWeight.bold))
+			  : const Text(
+				'Press here to start scanning for bumps',
+				style: TextStyle(
+				  color: Colors.black,
+				  fontSize: 15,
+				  fontWeight: FontWeight.bold)),
+			onPressed: _switchScanning),
+		  const SizedBox(
+			height: 10,
+		  ),
+		  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+			Column(
+			  children: [
+				const Text(
+				  'Y axis accel is',
+				  style: TextStyle(fontSize: 24),
+				),
+				Text(
+				  //   _accelRead.isEmpty ? 'None' : '${_accelRead.last.item2}',
+				  //   _accelRead.isEmpty
+				  cp == 'None' ? 'No hay path' : cp,
+				  style: const TextStyle(fontSize: 20, color: Colors.purple),
+				),
+			  ],
+			),
+			Column(
+			  children: [
+				const Text(
+				  'Z axis accel is',
+				  style: TextStyle(fontSize: 24),
+				),
+				Text(
+				  _accelRead.isEmpty ? 'None' : '${_accelRead.last.z}',
+				  style: const TextStyle(fontSize: 20, color: Colors.purple),
+				),
+			  ],
+			),
+		  ]),
+		  Column(
+			children: [
+			  const ListTile(
+				leading: Icon(Icons.speed),
+				title: Text(
+				  'curr speed',
+				  style: TextStyle(fontSize: 24),
+				),
+			  ),
+			  Text(
+				_speedRead.isEmpty ? 'None' : '${_speedRead.last} km/h',
+				style: TextStyle(
+					fontSize: 40,
+					color: _speedRead.isEmpty ? Colors.blueAccent : Colors.amber),
+			  ),
+			],
+		  ),
+		  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+			Column(
+			  children: [
+				const Text(
+				  'Y axis gyro is',
+				  style: TextStyle(fontSize: 24),
+				),
+				Text(
+				  _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.y}',
+				  style: const TextStyle(fontSize: 20, color: Colors.purple),
+				),
+			  ],
+			),
+			Column(
+			  children: [
+				const Text(
+				  'Z axis gyro is',
+				  style: TextStyle(fontSize: 24),
+				),
+				Text(
+				  _gyroRead.isEmpty ? 'None' : '${_gyroRead.last.z}',
+				  style: const TextStyle(fontSize: 20, color: Colors.purple),
+				),
+			  ],
+			),
+		  ]),
+		  const SizedBox(
+			height: 10,
+		  ),
+		  Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+			Column(
+			  children: [
+				const Text(
+				  'Latitude',
+				  style: TextStyle(fontSize: 24),
+				),
+				Text(
+				  _geoLoc.isNotEmpty ? '${_geoLoc.last?.latitude}' : 'None',
+				  style: const TextStyle(fontSize: 20, color: Colors.purple),
+				),
+			  ],
+			),
+			Column(
+			  children: [
+				const Text(
+				  'Longitude',
+				  style: TextStyle(fontSize: 24),
+				),
+				Text(
+				  _geoLoc.isNotEmpty ? '${_geoLoc.last?.longitude}' : 'None',
+				  style: const TextStyle(fontSize: 20, color: Colors.purple),
+				),
+			  ],
+			),
+		  ]),
+		  const SizedBox(
+			height: 20,
+		  ),
+		  ElevatedButton(
+					style: ElevatedButton.styleFrom(
+					  primary: Colors.white,
+					  padding: const EdgeInsets.symmetric(horizontal: 20),
+					  elevation: 20,
+					),
+					child: const Text('Label anomaly',
+							style: TextStyle(
+								color: Colors.black,
+								fontSize: 15,
+								fontWeight: FontWeight.bold)),
+					onPressed: labelAnomaly),
+		  const Text(
+			'Bump Detected',
+			style: TextStyle(fontSize: 24),
+		  ),
+		  Text(
+			_bumpDetected ? 'Yes' : 'No',
+			style: TextStyle(
+			  fontSize: 40,
+			  color: _bumpDetected
+				? Colors.redAccent.shade700
+				: Colors.greenAccent.shade700),
+		  ),
+		]
+	));
   }
 }
