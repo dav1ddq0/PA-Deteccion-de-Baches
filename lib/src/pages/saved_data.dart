@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -7,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:tuple/tuple.dart';
 
 import 'package:deteccion_de_baches/src/pages/accelerometer_data.dart';
+import 'package:deteccion_de_baches/src/pages/gyroscope_data.dart';
 
 class JData {
   late File jsonFile;
@@ -67,17 +69,34 @@ class JData {
     }
   }
 
-  Future<File> saveToJson(List<AccelerometerData> records) async {
-    await createBumpFolder();
+  Future<File> saveToJson(List<AccelerometerData> accelRecords,
+      List<GyroscopeData> gyroRecords, List<Position?> gpsRecords) async {
     final File jsonFile = File('$dataPath/bumps.json');
-    if (jsonFile.existsSync()) {}
-
-    final Map<String, List<List<double>>> data =
-        Map<String, List<List<double>>>();
-    List<List<double>> toJsonRecords =
-        data['accel'] = [for (AccelerometerData item in records) item.values];
-    jsonFile.writeAsStringSync(json.encode(data));
-    return jsonFile;
+    Map<String, dynamic> mapRecords = {
+      'accelerometer': [
+        for (AccelerometerData item in accelRecords) item.values
+      ],
+      'gyroscope': [for (GyroscopeData item in gyroRecords) item.values],
+      'gps': [
+        for (Position? item in gpsRecords)
+          {
+            'latitude': item?.latitude,
+            'longitude': item?.longitude,
+          }
+      ]
+    };
+    if (jsonFile.existsSync()) {
+      Map<String, dynamic> jsonFileContent =
+          json.decode(jsonFile.readAsStringSync());
+      jsonFileContent['record${jsonFileContent.length}'] = mapRecords;
+      jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+      return jsonFile;
+    } else {
+      await createBumpFolder();
+      final Map<String, Map<String, dynamic>> data = {'record1': mapRecords};
+      jsonFile.writeAsStringSync(json.encode(data));
+      return jsonFile;
+    }
   }
 
   Future<File> createFile(Map<String, int> content) async {

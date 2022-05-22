@@ -81,38 +81,30 @@ class _MyHomePageState extends State<MyHomePage> {
     return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
   }
 
-  GyroscopeData updateGyroData(
-      double currReadX,
-      double currReadY,
-      double currReadZ,
-      double prevReadX,
-      double prevReadY,
-      double prevReadZ) {
+  GyroscopeData updateGyroData(double currReadX, double currReadY,
+      double currReadZ, double prevReadX, double prevReadY, double prevReadZ) {
     if (_gyroRead.length == 1000) {
       _gyroRead.removeAt(0);
     }
 
-	List<double> filteredData = triAxialHighpassFilter(
+    List<double> filteredData = triAxialHighpassFilter(
         prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
 
-    return GyroscopeData(x: filteredData[0], y: filteredData[1], z: filteredData[2]);
+    return GyroscopeData(
+        x: filteredData[0], y: filteredData[1], z: filteredData[2]);
   }
 
-  AccelerometerData updateAccelData(
-      double currReadX,
-      double currReadY,
-      double currReadZ,
-      double prevReadX,
-      double prevReadY,
-      double prevReadZ) {
+  AccelerometerData updateAccelData(double currReadX, double currReadY,
+      double currReadZ, double prevReadX, double prevReadY, double prevReadZ) {
     if (_accelRead.length == 1000) {
       _accelRead.removeAt(0);
     }
 
-	List<double> filteredData = triAxialHighpassFilter(
+    List<double> filteredData = triAxialHighpassFilter(
         prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
 
-    return AccelerometerData(x: filteredData[0], y: filteredData[1], z: filteredData[2]);
+    return AccelerometerData(
+        x: filteredData[0], y: filteredData[1], z: filteredData[2]);
   }
 
   double _updateSpeedRead(
@@ -188,8 +180,10 @@ class _MyHomePageState extends State<MyHomePage> {
         cp = value;
 
         // data_prueba.templocalFile;
-        if (_accelRead.isNotEmpty) {
-          data_prueba.saveToJson(_accelRead);
+        if (_accelRead.isNotEmpty &&
+            _gyroRead.isNotEmpty &&
+            _geoLoc.isNotEmpty) {
+          data_prueba.saveToJson(_accelRead, _gyroRead, _geoLoc);
         }
 
         print(cp);
