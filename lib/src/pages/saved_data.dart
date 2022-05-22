@@ -47,7 +47,8 @@ class JData {
     // Get device info
     var androidInfo = await DeviceInfoPlugin().androidInfo;
     // Get device androids version
-    var release = double.parse(androidInfo.version.release.toString());
+    var release =
+        int.parse(androidInfo.version.release.toString().split('.')[0]);
 
     // For Andorid 10 and above
     if (release >= 10) {
@@ -96,13 +97,15 @@ class JData {
     return filePath;
   }
 
-  Future<void> createBumpFolder() async {
+  Future<Directory> createBumpFolder() async {
     await _grantStoragePermissions();
     final path = Directory(dataPath);
     print(path);
     if (!(await path.exists())) {
-      path.create();
+      var res = await path.create();
+      return res;
     }
+    return path;
   }
 
   Future<File> get templocalFile async {
