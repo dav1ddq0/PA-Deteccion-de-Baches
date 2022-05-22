@@ -11,13 +11,7 @@ class AccelerometerData {
   }
 
   List<double> get values => [x, y, z];
+  Map<String, dynamic> toJson() => {};
 }
 
 var acc1 = AccelerometerData(x: 1, y: 3, z: 4);
-
-void main() {
-  print(acc1.x);
-  print(acc1.y);
-  print(acc1.z);
-  print(acc1.values);
-}
