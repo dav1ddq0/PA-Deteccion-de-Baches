@@ -81,30 +81,38 @@ class _MyHomePageState extends State<MyHomePage> {
     return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
   }
 
-  GyroscopeData updateGyroData(double currReadX, double currReadY,
-      double currReadZ, double prevReadX, double prevReadY, double prevReadZ) {
+  GyroscopeData updateGyroData(
+      double currReadX,
+      double currReadY,
+      double currReadZ,
+      double prevReadX,
+      double prevReadY,
+      double prevReadZ) {
     if (_gyroRead.length == 1000) {
       _gyroRead.removeAt(0);
     }
 
-    List<double> filteredData = triAxialHighpassFilter(
+	List<double> filteredData = triAxialHighpassFilter(
         prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
 
-    return GyroscopeData(
-        x: filteredData[0], y: filteredData[1], z: filteredData[2]);
+    return GyroscopeData(x: filteredData[0], y: filteredData[1], z: filteredData[2]);
   }
 
-  AccelerometerData updateAccelData(double currReadX, double currReadY,
-      double currReadZ, double prevReadX, double prevReadY, double prevReadZ) {
+  AccelerometerData updateAccelData(
+      double currReadX,
+      double currReadY,
+      double currReadZ,
+      double prevReadX,
+      double prevReadY,
+      double prevReadZ) {
     if (_accelRead.length == 1000) {
       _accelRead.removeAt(0);
     }
 
-    List<double> filteredData = triAxialHighpassFilter(
+	List<double> filteredData = triAxialHighpassFilter(
         prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
 
-    return AccelerometerData(
-        x: filteredData[0], y: filteredData[1], z: filteredData[2]);
+    return AccelerometerData(x: filteredData[0], y: filteredData[1], z: filteredData[2]);
   }
 
   double _updateSpeedRead(
@@ -180,10 +188,8 @@ class _MyHomePageState extends State<MyHomePage> {
         cp = value;
 
         // data_prueba.templocalFile;
-        if (_accelRead.isNotEmpty &&
-            _gyroRead.isNotEmpty &&
-            _geoLoc.isNotEmpty) {
-          data_prueba.saveToJson(_accelRead, _gyroRead, _geoLoc);
+        if (_accelRead.isNotEmpty) {
+          data_prueba.saveToJson(_accelRead);
         }
 
         print(cp);
@@ -362,39 +368,37 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _createAxisInfoItems(BuildContext context) {
+  
 	MediaQueryData deviceData;
 	deviceData = MediaQuery.of(context);
 
 	double deviceWidth = deviceData.size.width;
-	double deviceHeight = deviceData.size.height;
-	print("AAAAAAAAAAAAAAAAAA $deviceHeight");
-	print("AAAAAAAAAAAAAAAAAA $deviceWidth");
+	double deviceheight = deviceData.size.height;
 
     return AspectRatio(
-	  aspectRatio: deviceWidth/deviceHeight,
+	  aspectRatio: deviceWidth/deviceheight)
 	  child: Column(
 		mainAxisAlignment: MainAxisAlignment.spaceBetween,
 		children: [
 		  ElevatedButton(
-			style: ElevatedButton.styleFrom(
+			  style: ElevatedButton.styleFrom(
 				primary: Colors.white,
 				padding: const EdgeInsets.symmetric(horizontal: 20),
 				elevation: 20,
-			),
-			child: _scanning
-			  ? const Text(
-				  'Scannnig for bumps...Press again if you wish to stop scanning',
-				  style: TextStyle(
-					color: Colors.black,
-					fontSize: 15,
-					fontWeight: FontWeight.bold))
-			  : const Text(
-				'Press here to start scanning for bumps',
-				style: TextStyle(
-				  color: Colors.black,
-				  fontSize: 15,
-				  fontWeight: FontWeight.bold)),
-			onPressed: _switchScanning),
+			  ),
+			  child: _scanning
+				  ? const Text(
+					  'Scannnig for bumps...Press again if you wish to stop scanning',
+					  style: TextStyle(
+						  color: Colors.black,
+						  fontSize: 15,
+						  fontWeight: FontWeight.bold))
+				  : const Text('Press here to start scanning for bumps',
+					  style: TextStyle(
+						  color: Colors.black,
+						  fontSize: 15,
+						  fontWeight: FontWeight.bold)),
+			  onPressed: _switchScanning),
 		  const SizedBox(
 			height: 10,
 		  ),
@@ -512,20 +516,21 @@ class _MyHomePageState extends State<MyHomePage> {
 								color: Colors.black,
 								fontSize: 15,
 								fontWeight: FontWeight.bold)),
-					onPressed: labelAnomaly),
-		  const Text(
-			'Bump Detected',
-			style: TextStyle(fontSize: 24),
-		  ),
-		  Text(
-			_bumpDetected ? 'Yes' : 'No',
-			style: TextStyle(
-			  fontSize: 40,
-			  color: _bumpDetected
-				? Colors.redAccent.shade700
-				: Colors.greenAccent.shade700),
-		  ),
+					onPressed: labelAnomaly)
+		  //   const Text(
+		  //     'Bump Detected',
+		  //     style: TextStyle(fontSize: 24),
+		  //   ),
+		  //   Text(
+		  //     _bumpDetected ? 'Yes' : 'No',
+		  //     style: TextStyle(
+		  //         fontSize: 40,
+		  //         color: _bumpDetected
+		  //             ? Colors.redAccent.shade700
+		  //             : Colors.greenAccent.shade700),
+		  //   ),
 		]
-	));
+		);
   }
+
 }
