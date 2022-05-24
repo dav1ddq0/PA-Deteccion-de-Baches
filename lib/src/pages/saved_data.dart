@@ -71,6 +71,7 @@ class JData {
 
   Future<File> saveToJson(List<AccelerometerData> accelRecords,
       List<GyroscopeData> gyroRecords, List<Position?> gpsRecords) async {
+    await createBumpFolder();
     final File jsonFile = File('$dataPath/bumps.json');
     Map<String, dynamic> mapRecords = {
       'accelerometer': [
@@ -92,8 +93,33 @@ class JData {
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
       return jsonFile;
     } else {
-      await createBumpFolder();
       final Map<String, Map<String, dynamic>> data = {'record1': mapRecords};
+      jsonFile.writeAsStringSync(json.encode(data));
+      return jsonFile;
+    }
+  }
+
+  Future<File> saveToJson2(Position position) async {
+    await createBumpFolder();
+    final File jsonFile = File('$dataPath/marks.json');
+
+    if (jsonFile.existsSync()) {
+      Map<String, List> jsonFileContent =
+          json.decode(jsonFile.readAsStringSync());
+      jsonFileContent['marks']?.add({
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      });
+      jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+      return jsonFile;
+    } else {
+      List<dynamic> mark = [
+        {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        }
+      ];
+      final Map<String, List<dynamic>> data = {'marks': mark};
       jsonFile.writeAsStringSync(json.encode(data));
       return jsonFile;
     }
@@ -119,7 +145,6 @@ class JData {
   Future<Directory> createBumpFolder() async {
     await _grantStoragePermissions();
     final path = Directory(dataPath);
-    print(path);
     if (!(await path.exists())) {
       var res = await path.create();
       return res;

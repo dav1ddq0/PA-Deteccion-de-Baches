@@ -39,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   final List<Position?> _geoLoc = [];
+
   final List<AccelerometerData> _accelRead = []; // Serie temporal acelerómetro
   final List<GyroscopeData> _gyroRead = []; // Serie temporal giroscopio
   final List<double> _speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
@@ -56,6 +57,9 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
+  Position? get currentPosition {
+    return _geoLoc.isNotEmpty ? _geoLoc[_geoLoc.length - 1] : null;
+  }
   // Métodos auxiliares
 
   Tuple2<double, double> updateGeoData(
@@ -183,18 +187,15 @@ class _MyHomePageState extends State<MyHomePage> {
       _scanning = !_scanning;
     });
 
-    data_prueba.localPath.then((value) {
-      setState(() {
-        cp = value;
-
-        // data_prueba.templocalFile;
-        if (_accelRead.isNotEmpty) {
-          data_prueba.saveToJson(_accelRead);
-        }
-
-        print(cp);
-      });
+    setState(() {
+      if (_accelRead.isNotEmpty &&
+          _gyroRead.isNotEmpty &&
+          _geoLoc.isNotEmpty &&
+          !_scanning) {
+        data_prueba.saveToJson(_accelRead, _gyroRead, _geoLoc);
+      }
     });
+
     _switchTimerAndEvents();
   }
 
@@ -308,6 +309,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+	MediaQueryData deviceData;
+	deviceData = MediaQuery.of(context);
+
+	double deviceWidth = deviceData.size.width;
+	double deviceheight = deviceData.size.height;
+	
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bump Record'),
@@ -368,16 +375,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _createAxisInfoItems(BuildContext context) {
-  
-	MediaQueryData deviceData;
-	deviceData = MediaQuery.of(context);
-
-	double deviceWidth = deviceData.size.width;
-	double deviceheight = deviceData.size.height;
-
-    return AspectRatio(
-	  aspectRatio: deviceWidth/deviceheight)
-	  child: Column(
+    return Column(
 		mainAxisAlignment: MainAxisAlignment.spaceBetween,
 		children: [
 		  ElevatedButton(
