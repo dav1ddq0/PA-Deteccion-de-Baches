@@ -39,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final _streamSubscriptions = <StreamSubscription<dynamic>>[];
   final List<Position?> _geoLoc = [];
+
   final List<AccelerometerData> _accelRead = []; // Serie temporal acelerómetro
   final List<GyroscopeData> _gyroRead = []; // Serie temporal giroscopio
   final List<double> _speedRead =
@@ -57,6 +58,9 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
+  Position? get currentPosition {
+    return _geoLoc.isNotEmpty ? _geoLoc[_geoLoc.length - 1] : null;
+  }
   // Métodos auxiliares
 
   Tuple2<double, double> updateGeoData(
@@ -172,20 +176,15 @@ class _MyHomePageState extends State<MyHomePage> {
       _scanning = !_scanning;
     });
 
-    data_prueba.localPath.then((value) {
-      setState(() {
-        cp = value;
-
-        // data_prueba.templocalFile;
-        if (_accelRead.isNotEmpty &&
-            _gyroRead.isNotEmpty &&
-            _geoLoc.isNotEmpty) {
-          data_prueba.saveToJson(_accelRead, _gyroRead, _geoLoc);
-        }
-
-        print(cp);
-      });
+    setState(() {
+      if (_accelRead.isNotEmpty &&
+          _gyroRead.isNotEmpty &&
+          _geoLoc.isNotEmpty &&
+          !_scanning) {
+        data_prueba.saveToJson(_accelRead, _gyroRead, _geoLoc);
+      }
     });
+
     _switchTimerAndEvents();
   }
 
