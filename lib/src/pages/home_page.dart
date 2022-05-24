@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-
+	
 import 'package:deteccion_de_baches/src/pages/accelerometer_data.dart';
 import 'package:deteccion_de_baches/src/pages/gyroscope_data.dart';
 import 'package:deteccion_de_baches/src/pages/gps_data.dart';
@@ -150,7 +150,9 @@ class _MyHomePageState extends State<MyHomePage> {
   // Métodos activados por onPressed
 
   void labelAnomaly() {
-
+	if(currentPosition != null){
+	  data_prueba.saveToJson2(currentPosition!);
+	}
   }
 
   void _switchTimerAndEvents() {
@@ -314,7 +316,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 	double deviceWidth = deviceData.size.width;
 	double deviceheight = deviceData.size.height;
-	
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bump Record'),
