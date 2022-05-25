@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-	
+
 import 'package:deteccion_de_baches/src/pages/accelerometer_data.dart';
 import 'package:deteccion_de_baches/src/pages/gyroscope_data.dart';
 import 'package:deteccion_de_baches/src/pages/gps_data.dart';
