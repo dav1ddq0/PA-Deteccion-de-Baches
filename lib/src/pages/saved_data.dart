@@ -104,7 +104,7 @@ class JData {
     final File jsonFile = File('$dataPath/marks.json');
 
     if (jsonFile.existsSync()) {
-      Map<String, List> jsonFileContent =
+      Map<String, dynamic> jsonFileContent =
           json.decode(jsonFile.readAsStringSync());
       jsonFileContent['marks']?.add({
         'latitude': position.latitude,
