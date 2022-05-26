@@ -7,8 +7,8 @@ import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:tuple/tuple.dart';
 
-import 'package:deteccion_de_baches/src/pages/accelerometer_data.dart';
-import 'package:deteccion_de_baches/src/pages/gyroscope_data.dart';
+import 'package:deteccion_de_baches/src/utils/accelerometer_data.dart';
+import 'package:deteccion_de_baches/src/utils/gyroscope_data.dart';
 
 class JData {
   late File jsonFile;

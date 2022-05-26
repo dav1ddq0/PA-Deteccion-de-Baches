@@ -4,13 +4,13 @@ class SizeConfig {
   late MediaQueryData _mediaQueryData;
   late double screenWidth;
   late double screenHeight;
-  double blockSizeHorizontal;
-  double blockSizeVertical;
+  late double blockSizeHorizontal;
+  late double blockSizeVertical;
 
-  double _safeAreaHorizontal;
-  double _safeAreaVertical;
-  double safeBlockHorizontal;
-  double safeBlockVertical;
+  late double _safeAreaHorizontal;
+  late double _safeAreaVertical;
+  late double safeBlockHorizontal;
+  late double safeBlockVertical;
 
   SizeConfig(BuildContext context) {
 	_mediaQueryData = MediaQuery.of(context);
