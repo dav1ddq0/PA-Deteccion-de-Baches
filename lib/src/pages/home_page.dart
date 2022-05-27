@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:deteccion_de_baches/src/utils/scaler.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 
+import 'package:deteccion_de_baches/src/utils/permissions.dart';
 import 'package:deteccion_de_baches/src/utils/accelerometer_data.dart';
 import 'package:deteccion_de_baches/src/utils/gyroscope_data.dart';
 import 'package:deteccion_de_baches/src/utils/gps_data.dart';
@@ -34,6 +33,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
+
+  final String dataPath = '/storage/emulated/0/bump_data'; // path where json data is stored
   int accelReadIntervals = 100;
   int geoLocReadIntervals = 1000;
 
@@ -151,7 +152,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   void labelAnomaly() {
 	if(currentPosition != null){
-	  collectedData.saveToJson2(currentPosition!);
+	  collectedData.saveToJson2(dataPath + '/marks', currentPosition!);
 	}
   }
 
@@ -194,7 +195,7 @@ class MyHomePageState extends State<MyHomePage> {
           gyroRead.isNotEmpty &&
           geoLoc.isNotEmpty &&
           !scanning) {
-        collectedData.saveToJson(accelRead, gyroRead, geoLoc);
+        collectedData.saveToJson(dataPath + '/data', accelRead, gyroRead, geoLoc);
       }
     });
 
@@ -311,6 +312,8 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+	createBumpDirectories(dataPath);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bump Record'),
