@@ -6,48 +6,46 @@ Future<void> grantStoragePermissions() async {
   var storageStatus = await Permission.storage.status;
 
   if (!storageStatus.isGranted) {
-	await Permission.storage.request();
+    await Permission.storage.request();
   }
 
   // Get device info
   var androidInfo = await DeviceInfoPlugin().androidInfo;
   // Get device androids version
-  var release =
-	  int.parse(androidInfo.version.release.toString().split('.')[0]);
+  var release = int.parse(androidInfo.version.release.toString().split('.')[0]);
 
   // For Andorid 10 and above
   if (release >= 10) {
-	var mediaLocationStatus = await Permission.accessMediaLocation.status;
-	if (!mediaLocationStatus.isGranted) {
-	  await Permission.accessMediaLocation.request();
-	}
+    var mediaLocationStatus = await Permission.accessMediaLocation.status;
+    if (!mediaLocationStatus.isGranted) {
+      await Permission.accessMediaLocation.request();
+    }
   }
 
   //For Android 11 and above
   if (release >= 11) {
-	var externalStorageStatus = await Permission.manageExternalStorage.status;
-	if (!externalStorageStatus.isGranted) {
-	  await Permission.manageExternalStorage.request();
-	}
+    var externalStorageStatus = await Permission.manageExternalStorage.status;
+    if (!externalStorageStatus.isGranted) {
+      await Permission.manageExternalStorage.request();
+    }
   }
 }
 
-Future<void> createBumpDirectories(String dataPath) async {
+//Folders needed for data persistence in the application
+Future<void> makeAppFolders(
+    String mainDirectory, List<String> subdirectories) async {
+  await createDirectory(mainDirectory);
+  for (String subdirectory in subdirectories) {
+    await createDirectory('$mainDirectory/$subdirectory');
+  }
+}
+
+Future<void> createDirectory(String dataPath) async {
   await grantStoragePermissions();
 
-  final path = Directory(dataPath);
-  final Directory rawDataPath = Directory(dataPath + '/data');
-  final Directory marksPath = Directory(dataPath +  '/marks');
+  Directory path = Directory(dataPath);
 
   if (!(await path.exists())) {
-	await path.create();
-  }
-
-  if (!(await rawDataPath.exists())) {
-	await rawDataPath.create();
-  }
-
-  if (!(await marksPath.exists())) {
-	await marksPath.create();
+    await path.create();
   }
 }
