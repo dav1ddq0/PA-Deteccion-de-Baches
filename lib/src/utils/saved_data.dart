@@ -37,9 +37,9 @@ class JData {
 
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
-  Future<File> saveToJson(
-      String dataPath, List<Map<String, dynamic>> data) async {
-    final File jsonFile = File('$dataPath/bumps.json');
+  Future<File> saveToJson(String dataPath, List<Map<String, dynamic>> data,
+      {String filename = 'bumps'}) async {
+    final File jsonFile = File('$dataPath/$filename.json');
 
     if (jsonFile.existsSync()) {
       List<Map<String, dynamic>> jsonFileContent =

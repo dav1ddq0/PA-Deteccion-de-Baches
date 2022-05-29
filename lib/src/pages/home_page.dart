@@ -38,10 +38,11 @@ class MyHomePageState extends State<MyHomePage> {
       '/storage/emulated/0/Baches'; // path where json data is stored
   final List<String> subdirectories = [
     'sensors',
-    'mark_labels'
+    'mark_labels',
+    'exported'
   ]; // path where sensor data is stored
   late TextEditingController fileNameController;
-  String fileName = '';
+  String filename = '';
 
   int accelReadIntervals = 100;
   int geoLocReadIntervals = 1000;
@@ -53,7 +54,7 @@ class MyHomePageState extends State<MyHomePage> {
   final List<Position?> geoLoc = [];
   final List<double> speedRead = [];
 
-  late GPSData prevGeoLoc;
+  late Position? prevGeoLoc;
 
   late Timer accelTimer;
   late Timer speedTimer;
@@ -119,20 +120,22 @@ class MyHomePageState extends State<MyHomePage> {
   /*   return AccelerometerData(x: filteredData[0], y: filteredData[1], z: filteredData[2]); */
   /* } */
 
-  void updateSpeedRead() {
+  Future<void> updateSpeedRead() async {
     if (speedRead.length == 1000) {
       speedRead.removeAt(0);
     }
 
     final double currSpeed = computeSpeed(
-        prevGeoLoc.latitude,
-        prevGeoLoc.longitude,
+        prevGeoLoc!.latitude,
+        prevGeoLoc!.longitude,
         geoLoc.last!.latitude,
         geoLoc.last!.longitude,
-        (geoLocReadIntervals / 1000));
+        (speedReadIntervals / 1000));
 
-    accelReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
-    geoLocReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
+    if (currSpeed != 0) {
+      accelReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
+      geoLocReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
+    }
 
     setState(() {
       speedRead.add(currSpeed);
@@ -272,6 +275,9 @@ class MyHomePageState extends State<MyHomePage> {
     /* ); */
 
     setState(() {
+      if (geoLoc.isNotEmpty) {
+        prevGeoLoc = geoLoc.last;
+      }
       geoLoc.add(newRead);
     });
   }
@@ -294,18 +300,26 @@ class MyHomePageState extends State<MyHomePage> {
         GyroscopeData(x: gyroReadX, y: gyroReadY, z: gyroReadZ);
 
     setState(() {
-      sensorData
-          .add({'accel': accelData, 'gyro': gyroData, 'gps': currentPosition});
+      if (currentPosition != null) {
+        sensorData.add({
+          'accelerometer': accelData.values,
+          'gyroscope': gyroData.values,
+          'gps': {
+            'latitude': currentPosition!.latitude,
+            'longitude': currentPosition!.longitude
+          }
+        });
 
-      /* accelRead */
-      /*     .add(AccelerometerData(x: currReadX, y: currReadY, z: currReadZ)); */
-      /* if (prevReadX != 0) { */
-      /*   bumpDetected = scanPotholes( */
-      /*       prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ); */
-      /*   if (bumpDetected) { */
-      /*     HapticFeedback.vibrate(); */
-      /*   } */
-      /* } */
+        /* accelRead */
+        /*     .add(AccelerometerData(x: currReadX, y: currReadY, z: currReadZ)); */
+        /* if (prevReadX != 0) { */
+        /*   bumpDetected = scanPotholes( */
+        /*       prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ); */
+        /*   if (bumpDetected) { */
+        /*     HapticFeedback.vibrate(); */
+        /*   } */
+        /* } */
+      }
     });
   }
 
@@ -418,32 +432,6 @@ class MyHomePageState extends State<MyHomePage> {
       const SizedBox(
         height: 10,
       ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        Column(
-          children: [
-            const Text(
-              'Y axis accel is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              'None',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-        Column(
-          children: [
-            const Text(
-              'Z axis accel is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              'None',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-      ]),
       Column(
         children: [
           const ListTile(
@@ -461,32 +449,6 @@ class MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-        Column(
-          children: [
-            const Text(
-              'Y axis gyro is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              'None',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-        Column(
-          children: [
-            const Text(
-              'Z axis gyro is',
-              style: TextStyle(fontSize: 24),
-            ),
-            Text(
-              'None',
-              style: const TextStyle(fontSize: 20, color: Colors.purple),
-            ),
-          ],
-        ),
-      ]),
       const SizedBox(
         height: 10,
       ),
@@ -532,7 +494,7 @@ class MyHomePageState extends State<MyHomePage> {
                   fontWeight: FontWeight.bold)),
           onPressed: labelAnomaly),
       ElevatedButton(
-        child: const Text('save data as'),
+        child: const Text('Save data as'),
         onPressed: () {
           showDialog(
             context: context,
@@ -542,7 +504,7 @@ class MyHomePageState extends State<MyHomePage> {
                 content: TextField(
                   controller: fileNameController,
                   decoration: const InputDecoration(
-                      hintText: "choose a name for this file"),
+                      hintText: "Choose a name for this file"),
                 ),
                 actions: <Widget>[
                   TextButton(
@@ -552,9 +514,13 @@ class MyHomePageState extends State<MyHomePage> {
                     },
                   ),
                   TextButton(
-                    child: const Text('OK'),
+                    child: const Text('SAVE'),
                     onPressed: () {
-                      fileName = fileNameController.text;
+                      filename = fileNameController.text;
+                      collectedData.saveToJson(
+                          '$mainDirectory/${subdirectories[2]}', sensorData,
+                          filename: filename);
+                      sensorData.clear();
                       Navigator.pop(context);
                     },
                   ),

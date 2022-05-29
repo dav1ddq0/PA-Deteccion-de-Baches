@@ -40,7 +40,7 @@ bool scanPotholes(double prevAccelX, double prevAccelY, double prevAccelZ,
   return zThresh(currAccelZ) || zDiff(prevAccelZ, currAccelZ);
 }
 
-List<double>biAxialLowpassFilter( prevLat, prevLong, currLat, currLong) {
+List<double> biAxialLowpassFilter(prevLat, prevLong, currLat, currLong) {
   const double smoothingParam = 0.9;
 
   //Low-Pass Filter
