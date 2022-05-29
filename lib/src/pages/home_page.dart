@@ -40,7 +40,7 @@ class MyHomePageState extends State<MyHomePage> {
     'sensors',
     'mark_labels'
   ]; // path where sensor data is stored
-  late TextEditingController	fileNameController;
+  late TextEditingController fileNameController;
   String fileName = '';
 
   int accelReadIntervals = 100;
@@ -49,13 +49,9 @@ class MyHomePageState extends State<MyHomePage> {
 
   final streamSubscriptions = <StreamSubscription<dynamic>>[];
 
-  late final AccelerometerData currAccelRead;
-  late final GyroscopeData currGyroRead;
-  late final GPSData currGPSRead;
-
   final List<Map<String, dynamic>> sensorData = [];
   final List<Position?> geoLoc = [];
-  final List<double> speedRead = []; 
+  final List<double> speedRead = [];
 
   late GPSData prevGeoLoc;
 
@@ -72,7 +68,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-	fileNameController = TextEditingController();
+    fileNameController = TextEditingController();
     super.initState();
   }
 
@@ -128,15 +124,19 @@ class MyHomePageState extends State<MyHomePage> {
       speedRead.removeAt(0);
     }
 
-    final double currSpeed = computeSpeed(prevGeoLoc.latitude, prevGeoLoc.longitude,
-	  geoLoc.last!.latitude, geoLoc.last!.longitude, (geoLocReadIntervals / 1000));
+    final double currSpeed = computeSpeed(
+        prevGeoLoc.latitude,
+        prevGeoLoc.longitude,
+        geoLoc.last!.latitude,
+        geoLoc.last!.longitude,
+        (geoLocReadIntervals / 1000));
 
-	accelReadIntervals = (1000*recomputeSampleRate(1, currSpeed)).floor();
-	geoLocReadIntervals = (1000*recomputeSampleRate(1, currSpeed)).floor();
+    accelReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
+    geoLocReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
 
-	setState(() {
-	    speedRead.add(currSpeed);
-	  });
+    setState(() {
+      speedRead.add(currSpeed);
+    });
   }
 
   void subscribeAccelEventListener() {
@@ -169,16 +169,16 @@ class MyHomePageState extends State<MyHomePage> {
     if (scanning) {
       accelTimer =
           Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
-			storeSensorData();
+        storeSensorData();
       });
       geoLocTimer =
           Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
-			storeGeoData();
+        storeGeoData();
       });
 
-      speedTimer =
-          Timer.periodic(const Duration(milliseconds: speedReadIntervals), (timer) {
-			updateSpeedRead();
+      speedTimer = Timer.periodic(
+          const Duration(milliseconds: speedReadIntervals), (timer) {
+        updateSpeedRead();
       });
 
       if (streamSubscriptions.isEmpty) {
@@ -255,7 +255,8 @@ class MyHomePageState extends State<MyHomePage> {
     var newGeoFilt = [newRead.latitude, newRead.longitude];
 
     if (prevLat != 0 && prevLong != 0) {
-      newGeoFilt = updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+      newGeoFilt =
+          updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
     }
     // Actualizar lecturas de velocidad y coordenadas.
 
@@ -278,36 +279,23 @@ class MyHomePageState extends State<MyHomePage> {
   Future<void> storeSensorData() async {
     /* final newAccelFilt = updateAccelData( */
     /*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); */
-	final double accelReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-	final double accelReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
-	final double accelReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double accelReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double accelReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double accelReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
 
-	final AccelerometerData accelData = AccelerometerData(
-	  x: accelReadX, 
-	  y: accelReadY,
-	  z: accelReadZ 
-	);
+    final AccelerometerData accelData =
+        AccelerometerData(x: accelReadX, y: accelReadY, z: accelReadZ);
 
-	currAccelRead = accelData;
-	
-	final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-	final double gyroReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
-	final double gyroReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double gyroReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double gyroReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
 
-	final GyroscopeData	gyroData = GyroscopeData(
-	  x: gyroReadX, 
-	  y: gyroReadY,
-	  z: gyroReadZ 
-	);
-
-	currGyroRead = gyroData;
+    final GyroscopeData gyroData =
+        GyroscopeData(x: gyroReadX, y: gyroReadY, z: gyroReadZ);
 
     setState(() {
-	  sensorData.add({
-		'accel': accelData,
-		'gyro': gyroData,
-		'gps': currentPosition
-	  });
+      sensorData
+          .add({'accel': accelData, 'gyro': gyroData, 'gps': currentPosition});
 
       /* accelRead */
       /*     .add(AccelerometerData(x: currReadX, y: currReadY, z: currReadZ)); */
@@ -371,36 +359,6 @@ class MyHomePageState extends State<MyHomePage> {
       ],
     );
   }
-
-  void displayTextInputDialog(BuildContext context) {
-	  showDialog(
-		context: context,
-		builder: (context) {
-		  return AlertDialog(
-			title: const Text('TextField in Dialog'),
-			content: TextField(
-			  controller: fileNameController,
-			  decoration: const InputDecoration(hintText: "Text Field in Dialog"),
-			),
-			actions: <Widget>[
-			  TextButton(
-				child: const Text('CANCEL'),
-				onPressed: () {
-				  Navigator.pop(context);
-				},
-			  ),
-			  TextButton(
-				child: const Text('OK'),
-				onPressed: () {
-				  fileName = fileNameController.text;
-				  Navigator.pop(context);
-				},
-			  ),
-			],
-		  );
-		},
-	  );
-	}
 
   List<Widget> createPagesAccessItems(
       List<dynamic>? data, BuildContext context) {
@@ -468,7 +426,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              '${currAccelRead.y}',
+              'None',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -480,7 +438,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              '${currAccelRead.z}',
+              'None',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -511,7 +469,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              '${currGyroRead.y}',
+              'None',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -523,7 +481,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              '${currGyroRead.z}',
+              'None',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -573,11 +531,39 @@ class MyHomePageState extends State<MyHomePage> {
                   fontSize: 15,
                   fontWeight: FontWeight.bold)),
           onPressed: labelAnomaly),
-	  ElevatedButton(
-		onPressed: displayTextInputDialog(),
-		child: const Text('Save data as');
-	  )
-
+      ElevatedButton(
+        child: const Text('save data as'),
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Name your data'),
+                content: TextField(
+                  controller: fileNameController,
+                  decoration: const InputDecoration(
+                      hintText: "choose a name for this file"),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('CANCEL'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      fileName = fileNameController.text;
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      )
       //   const Text(
       //     'Bump Detected',
       //     style: TextStyle(fontSize: 24),
