@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:deteccion_de_baches/src/utils/scaler.dart';
+import 'package:deteccion_de_baches/src/utils/tools.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -13,7 +14,6 @@ import 'package:deteccion_de_baches/src/utils/signal_processing.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
 import 'package:deteccion_de_baches/src/utils/icon_string.dart';
 import 'package:deteccion_de_baches/src/utils/saved_data.dart';
-import 'package:deteccion_de_baches/src/utils/permissions.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
@@ -40,18 +40,22 @@ class MyHomePageState extends State<MyHomePage> {
     'sensors',
     'mark_labels'
   ]; // path where sensor data is stored
+
   int accelReadIntervals = 100;
   int geoLocReadIntervals = 1000;
+  static const int speedReadIntervals = 5000;
 
   final streamSubscriptions = <StreamSubscription<dynamic>>[];
 
   final List<AccelerometerData> accelRead = []; // Serie temporal acelerómetro
   final List<GyroscopeData> gyroRead = []; // Serie temporal giroscopio
   final List<Position?> geoLoc = [];
-  final List<double> speedRead =
-      []; // Velocidad en cada momento que se realiza una medición en km/h
+  final List<double> speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
+
+  late GPSData prevGeoLoc;
 
   late Timer accelTimer;
+  late Timer speedTimer;
   late Timer geoLocTimer;
 
   late GyroscopeEvent gyroEvent;
@@ -71,23 +75,9 @@ class MyHomePageState extends State<MyHomePage> {
   }
   // Métodos auxiliares
 
-  List<double> updateGeoData( double currLat, currLong, prevLat, prevLong) {
+  List<double> updateGeoData(double currLat, currLong, prevLat, prevLong) {
     if (geoLoc.length == 1000) {
       geoLoc.removeAt(0);
-    }
-
-    late double currSpeed;
-    if (geoLoc.length > 1) {
-      var currSpeed = updateSpeedRead(prevLat, prevLong, currLat, currLong);
-
-      if (speedRead.isEmpty) {
-        currSpeed = currSpeed * 0.1;
-      } else {
-        currSpeed = speedRead.last * 0.9 + currSpeed * 0.1;
-      }
-
-      currSpeed = double.parse(currSpeed.toStringAsPrecision(6));
-      speedRead.add(currSpeed);
     }
 
     return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
@@ -127,15 +117,20 @@ class MyHomePageState extends State<MyHomePage> {
   /*   return AccelerometerData(x: filteredData[0], y: filteredData[1], z: filteredData[2]); */
   /* } */
 
-  double updateSpeedRead(double prevLat, double prevLong, double currLat, double currLong) {
+  void updateSpeedRead() {
     if (speedRead.length == 1000) {
       speedRead.removeAt(0);
     }
 
-    final double currSpeed = computeSpeed(
-        prevLat, prevLong, currLat, currLong, (geoLocReadIntervals / 1000));
+    final double currSpeed = computeSpeed(prevGeoLoc.latitude, prevGeoLoc.longitude,
+	  geoLoc.last!.latitude, geoLoc.last!.longitude, (geoLocReadIntervals / 1000));
 
-    return double.parse(currSpeed.toStringAsPrecision(5));
+	accelReadIntervals = (1000*recomputeSampleRate(1, currSpeed)).floor();
+	geoLocReadIntervals = (1000*recomputeSampleRate(1, currSpeed)).floor();
+
+	setState(() {
+	    speedRead.add(currSpeed);
+	  });
   }
 
   void subscribeAccelEventListener() {
@@ -168,12 +163,17 @@ class MyHomePageState extends State<MyHomePage> {
     if (scanning) {
       accelTimer =
           Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
-        updateFilterAccelData();
-        updateFilterGyroData();
+			updateFilterAccelData();
+			updateFilterGyroData();
       });
       geoLocTimer =
           Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
-        updateFilterGeoData();
+			updateFilterGeoData();
+      });
+
+      speedTimer =
+          Timer.periodic(Duration(milliseconds: speedReadIntervals), (timer) {
+			updateSpeedRead();
       });
 
       if (streamSubscriptions.isEmpty) {
@@ -212,11 +212,35 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> updateFilterGeoData() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
     // When we reach here, permissions are granted and we can
-    await grantLocationPermission();
-
     // continue accessing the position of the device.
-
     Position newRead = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
 
