@@ -37,8 +37,7 @@ class JData {
 
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
-  Future<File> saveToJson(String dataPath, List<AccelerometerData> accelRecords,
-      List<GyroscopeData> gyroRecords, List<Position?> gpsRecords) async {
+  Future<File> saveToJson(String dataPath, List<Map<String, dynamic>>) async {
     final File jsonFile = File('$dataPath/bumps.json');
     Map<String, dynamic> mapRecords = {
       'accelerometer': [for (AccelerometerData item in accelRecords) item.values],

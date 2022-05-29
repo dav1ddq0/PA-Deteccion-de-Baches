@@ -47,10 +47,13 @@ class MyHomePageState extends State<MyHomePage> {
 
   final streamSubscriptions = <StreamSubscription<dynamic>>[];
 
-  final List<AccelerometerData> accelRead = []; // Serie temporal acelerómetro
-  final List<GyroscopeData> gyroRead = []; // Serie temporal giroscopio
+  late final AccelerometerData currAccelRead;
+  late final GyroscopeData currGyroRead;
+  late final GPSData currGPSRead;
+
+  final List<Map<String, dynamic>> sensorData = [];
   final List<Position?> geoLoc = [];
-  final List<double> speedRead = []; // Velocidad en cada momento que se realiza una medición en km/h
+  final List<double> speedRead = []; 
 
   late GPSData prevGeoLoc;
 
@@ -71,7 +74,7 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   Position? get currentPosition {
-    return geoLoc.isNotEmpty ? geoLoc[geoLoc.length - 1] : null;
+    return geoLoc.isNotEmpty ? geoLoc.last : null;
   }
   // Métodos auxiliares
 
@@ -163,16 +166,15 @@ class MyHomePageState extends State<MyHomePage> {
     if (scanning) {
       accelTimer =
           Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
-			updateFilterAccelData();
-			updateFilterGyroData();
+			storeSensorData();
       });
       geoLocTimer =
           Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
-			updateFilterGeoData();
+			storeGeoData();
       });
 
       speedTimer =
-          Timer.periodic(Duration(milliseconds: speedReadIntervals), (timer) {
+          Timer.periodic(const Duration(milliseconds: speedReadIntervals), (timer) {
 			updateSpeedRead();
       });
 
@@ -199,19 +201,16 @@ class MyHomePageState extends State<MyHomePage> {
     });
 
     setState(() {
-      if (accelRead.isNotEmpty &&
-          gyroRead.isNotEmpty &&
-          geoLoc.isNotEmpty &&
-          !scanning) {
+      if (sensorData.isNotEmpty && !scanning) {
         collectedData.saveToJson(
-            '$mainDirectory/${subdirectories[0]}', accelRead, gyroRead, geoLoc);
+            '$mainDirectory/${subdirectories[0]}', sensorData);
       }
     });
 
     switchTimerAndEvents();
   }
 
-  Future<void> updateFilterGeoData() async {
+  Future<void> storeGeoData() async {
     bool serviceEnabled;
     LocationPermission permission;
 
@@ -273,48 +272,68 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> updateFilterAccelData() async {
-    // Obtener lecturas del giroscopio y acelerómetro
-    final double currReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double currReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
-    final double currReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
-
-    final double prevReadX = accelRead.isEmpty ? 0 : accelRead.last.x;
-    final double prevReadY = accelRead.isEmpty ? 0 : accelRead.last.y;
-    final double prevReadZ = accelRead.isEmpty ? 0 : accelRead.last.z;
-
+  Future<void> storeSensorData() async {
     /* final newAccelFilt = updateAccelData( */
     /*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); */
+	final double accelReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
+	final double accelReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
+	final double accelReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
+
+	final AccelerometerData accelData = AccelerometerData(
+	  x: accelReadX, 
+	  y: accelReadY,
+	  z: accelReadZ 
+	);
+
+	currAccelRead = accelData;
+	
+	final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
+	final double gyroReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
+	final double gyroReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
+
+	final GyroscopeData	gyroData = GyroscopeData(
+	  x: gyroReadX, 
+	  y: gyroReadY,
+	  z: gyroReadZ 
+	);
+
+	currGyroRead = gyroData;
 
     setState(() {
-      accelRead
-          .add(AccelerometerData(x: currReadX, y: currReadY, z: currReadZ));
-      if (prevReadX != 0) {
-        bumpDetected = scanPotholes(
-            prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ);
-        if (bumpDetected) {
-          HapticFeedback.vibrate();
-        }
-      }
+	  sensorData.add({
+		'accel': accelData,
+		'gyro': gyroData,
+		'gps': currentPosition
+	  });
+
+      /* accelRead */
+      /*     .add(AccelerometerData(x: currReadX, y: currReadY, z: currReadZ)); */
+      /* if (prevReadX != 0) { */
+      /*   bumpDetected = scanPotholes( */
+      /*       prevReadX, prevReadY, prevReadZ, currReadX, currReadY, currReadZ); */
+      /*   if (bumpDetected) { */
+      /*     HapticFeedback.vibrate(); */
+      /*   } */
+      /* } */
     });
   }
 
-  Future<void> updateFilterGyroData() async {
-    final double currReadX = double.parse(gyroEvent.x.toStringAsPrecision(6));
-    final double currReadY = double.parse(gyroEvent.y.toStringAsPrecision(6));
-    final double currReadZ = double.parse(gyroEvent.z.toStringAsPrecision(6));
+  /* Future<void> updateFilterGyroData() async { */
+  /*   final double currReadX = double.parse(gyroEvent.x.toStringAsPrecision(6)); */
+  /*   final double currReadY = double.parse(gyroEvent.y.toStringAsPrecision(6)); */
+  /*   final double currReadZ = double.parse(gyroEvent.z.toStringAsPrecision(6)); */
 
-    final double prevReadX = gyroRead.isEmpty ? 0 : gyroRead.last.x;
-    final double prevReadY = gyroRead.isEmpty ? 0 : gyroRead.last.y;
-    final double prevReadZ = gyroRead.isEmpty ? 0 : gyroRead.last.z;
+  /*   final double prevReadX = gyroRead.isEmpty ? 0 : gyroRead.last.x; */
+  /*   final double prevReadY = gyroRead.isEmpty ? 0 : gyroRead.last.y; */
+  /*   final double prevReadZ = gyroRead.isEmpty ? 0 : gyroRead.last.z; */
 
-    /* final newGyroFilt = updateGyroData( */
-    /*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); */
+  /*   /1* final newGyroFilt = updateGyroData( *1/ */
+  /*   /1*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); *1/ */
 
-    setState(() {
-      gyroRead.add(GyroscopeData(x: currReadX, y: currReadY, z: currReadZ));
-    });
-  }
+  /*   setState(() { */
+  /*     gyroRead.add(GyroscopeData(x: currReadX, y: currReadY, z: currReadZ)); */
+  /*   }); */
+  /* } */
 
   // Método para construir el Widget
 
@@ -416,7 +435,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              accelRead.isEmpty ? 'None' : '${accelRead.last.y}',
+              '${currAccelRead.y}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -428,7 +447,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              accelRead.isEmpty ? 'None' : '${accelRead.last.z}',
+              '${currAccelRead.z}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -459,7 +478,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              gyroRead.isEmpty ? 'None' : '${gyroRead.last.y}',
+              '${currGyroRead.y}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
@@ -471,7 +490,7 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 24),
             ),
             Text(
-              gyroRead.isEmpty ? 'None' : '${gyroRead.last.z}',
+              '${currGyroRead.z}',
               style: const TextStyle(fontSize: 20, color: Colors.purple),
             ),
           ],
