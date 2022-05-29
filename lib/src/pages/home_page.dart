@@ -40,6 +40,8 @@ class MyHomePageState extends State<MyHomePage> {
     'sensors',
     'mark_labels'
   ]; // path where sensor data is stored
+  late TextEditingController	fileNameController;
+  String fileName = '';
 
   int accelReadIntervals = 100;
   int geoLocReadIntervals = 1000;
@@ -70,6 +72,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
+	fileNameController = TextEditingController();
     super.initState();
   }
 
@@ -369,6 +372,36 @@ class MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void displayTextInputDialog(BuildContext context) {
+	  showDialog(
+		context: context,
+		builder: (context) {
+		  return AlertDialog(
+			title: const Text('TextField in Dialog'),
+			content: TextField(
+			  controller: fileNameController,
+			  decoration: const InputDecoration(hintText: "Text Field in Dialog"),
+			),
+			actions: <Widget>[
+			  TextButton(
+				child: const Text('CANCEL'),
+				onPressed: () {
+				  Navigator.pop(context);
+				},
+			  ),
+			  TextButton(
+				child: const Text('OK'),
+				onPressed: () {
+				  fileName = fileNameController.text;
+				  Navigator.pop(context);
+				},
+			  ),
+			],
+		  );
+		},
+	  );
+	}
+
   List<Widget> createPagesAccessItems(
       List<dynamic>? data, BuildContext context) {
     List<Widget> pagesItems = [];
@@ -539,7 +572,12 @@ class MyHomePageState extends State<MyHomePage> {
                   color: Colors.black,
                   fontSize: 15,
                   fontWeight: FontWeight.bold)),
-          onPressed: labelAnomaly)
+          onPressed: labelAnomaly),
+	  ElevatedButton(
+		onPressed: displayTextInputDialog(),
+		child: const Text('Save data as');
+	  )
+
       //   const Text(
       //     'Bump Detected',
       //     style: TextStyle(fontSize: 24),
