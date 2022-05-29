@@ -13,6 +13,7 @@ import 'package:deteccion_de_baches/src/utils/signal_processing.dart';
 import 'package:deteccion_de_baches/src/providers/menu_provider.dart';
 import 'package:deteccion_de_baches/src/utils/icon_string.dart';
 import 'package:deteccion_de_baches/src/utils/saved_data.dart';
+import 'package:deteccion_de_baches/src/utils/permissions.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
@@ -52,6 +53,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   late Timer accelTimer;
   late Timer geoLocTimer;
+
   late GyroscopeEvent gyroEvent;
   late UserAccelerometerEvent accelEvent;
   JData collectedData = JData();
@@ -210,35 +212,11 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> updateFilterGeoData() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      await Geolocator.openLocationSettings();
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
     // When we reach here, permissions are granted and we can
+    await grantLocationPermission();
+
     // continue accessing the position of the device.
+
     Position newRead = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
 
