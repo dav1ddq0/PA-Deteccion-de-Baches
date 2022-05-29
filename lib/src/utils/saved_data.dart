@@ -37,26 +37,21 @@ class JData {
 
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
-  Future<File> saveToJson(String dataPath, List<Map<String, dynamic>>) async {
+  Future<File> saveToJson(
+      String dataPath, List<Map<String, dynamic>> data) async {
     final File jsonFile = File('$dataPath/bumps.json');
-    Map<String, dynamic> mapRecords = {
-      'accelerometer': [for (AccelerometerData item in accelRecords) item.values],
-      'gyroscope': [for (GyroscopeData item in gyroRecords) item.values],
-      'gps': [
-        for (Position? item in gpsRecords) {
-            'latitude': item?.latitude,
-            'longitude': item?.longitude,
-        }
-      ]
-    };
 
     if (jsonFile.existsSync()) {
-      Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
-      jsonFileContent['record${jsonFileContent.length}'] = mapRecords;
+      List<Map<String, dynamic>> jsonFileContent =
+          json.decode(jsonFile.readAsStringSync());
+
+      // for (int i = 0; i < data.length; i++) {
+      //   jsonFileContent.add(data[i]);
+      // }
+      jsonFileContent.addAll(data);
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
       return jsonFile;
     } else {
-      final Map<String, Map<String, dynamic>> data = {'record1': mapRecords};
       jsonFile.writeAsStringSync(json.encode(data));
       return jsonFile;
     }
@@ -102,7 +97,6 @@ class JData {
     String filePath = '$appDocumentsPath/demoTextFile.txt';
     return filePath;
   }
-
 
   /* Future<File> get templocalFile async { */
   /*   await createBumpFolder(); */
