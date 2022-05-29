@@ -40,8 +40,7 @@ bool scanPotholes(double prevAccelX, double prevAccelY, double prevAccelZ,
   return zThresh(currAccelZ) || zDiff(prevAccelZ, currAccelZ);
 }
 
-Tuple2<double, double> biAxialLowpassFilter(
-    prevLat, prevLong, currLat, currLong) {
+List<double>biAxialLowpassFilter( prevLat, prevLong, currLat, currLong) {
   const double smoothingParam = 0.9;
 
   //Low-Pass Filter
@@ -53,7 +52,7 @@ Tuple2<double, double> biAxialLowpassFilter(
   filteredLat = double.parse(filteredLat.toStringAsPrecision(9));
   filteredLong = double.parse(filteredLong.toStringAsPrecision(9));
 
-  return Tuple2<double, double>(filteredLat, filteredLong);
+  return [filteredLat, filteredLong];
 }
 
 List<double> triAxialHighpassFilter(double prevReadX, double prevReadY,

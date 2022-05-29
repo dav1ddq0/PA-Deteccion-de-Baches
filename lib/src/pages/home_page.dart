@@ -69,27 +69,27 @@ class MyHomePageState extends State<MyHomePage> {
   }
   // Métodos auxiliares
 
-  /* Tuple2<double, double> updateGeoData( double currLat, currLong, prevLat, prevLong) { */
-  /*   if (geoLoc.length == 1000) { */
-  /*     geoLoc.removeAt(0); */
-  /*   } */
+  List<double> updateGeoData( double currLat, currLong, prevLat, prevLong) {
+    if (geoLoc.length == 1000) {
+      geoLoc.removeAt(0);
+    }
 
-  /*   late double currSpeed; */
-  /*   if (geoLoc.length > 1) { */
-  /*     var currSpeed = updateSpeedRead(prevLat, prevLong, currLat, currLong); */
+    late double currSpeed;
+    if (geoLoc.length > 1) {
+      var currSpeed = updateSpeedRead(prevLat, prevLong, currLat, currLong);
 
-  /*     if (speedRead.isEmpty) { */
-  /*       currSpeed = currSpeed * 0.1; */
-  /*     } else { */
-  /*       currSpeed = speedRead.last * 0.9 + currSpeed * 0.1; */
-  /*     } */
+      if (speedRead.isEmpty) {
+        currSpeed = currSpeed * 0.1;
+      } else {
+        currSpeed = speedRead.last * 0.9 + currSpeed * 0.1;
+      }
 
-  /*     currSpeed = double.parse(currSpeed.toStringAsPrecision(6)); */
-  /*     speedRead.add(currSpeed); */
-  /*   } */
+      currSpeed = double.parse(currSpeed.toStringAsPrecision(6));
+      speedRead.add(currSpeed);
+    }
 
-  /*   return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong); */
-  /* } */
+    return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
+  }
 
   /* GyroscopeData updateGyroData( */
   /*     double currReadX, */
@@ -125,16 +125,16 @@ class MyHomePageState extends State<MyHomePage> {
   /*   return AccelerometerData(x: filteredData[0], y: filteredData[1], z: filteredData[2]); */
   /* } */
 
-  /* double updateSpeedRead( */
-  /*     double prevLat, double prevLong, double currLat, double currLong) { */
-  /*   if (speedRead.length == 1000) { */
-  /*     speedRead.removeAt(0); */
-  /*   } */
+  double updateSpeedRead(double prevLat, double prevLong, double currLat, double currLong) {
+    if (speedRead.length == 1000) {
+      speedRead.removeAt(0);
+    }
 
-  /*   final double currSpeed = computeSpeed( */
-  /*       prevLat, prevLong, currLat, currLong, (geoLocReadIntervals / 1000)); */
-  /*   return double.parse(currSpeed.toStringAsPrecision(5)); */
-  /* } */
+    final double currSpeed = computeSpeed(
+        prevLat, prevLong, currLat, currLong, (geoLocReadIntervals / 1000));
+
+    return double.parse(currSpeed.toStringAsPrecision(5));
+  }
 
   void subscribeAccelEventListener() {
     streamSubscriptions
@@ -245,16 +245,14 @@ class MyHomePageState extends State<MyHomePage> {
     // double currLat = double.parse(newRead.latitude.toStringAsPrecision(10));
     // double currLong = double.parse(newRead.longitude.toStringAsPrecision(10));
 
-    /* final double prevLat = geoLoc.isEmpty ? 0 : geoLoc.last!.latitude; */
-    /* final double prevLong = geoLoc.isEmpty ? 0 : geoLoc.last!.longitude; */
+    final double prevLat = geoLoc.isEmpty ? 0 : geoLoc.last!.latitude;
+    final double prevLong = geoLoc.isEmpty ? 0 : geoLoc.last!.longitude;
 
-    /* var newGeoFilt = */
-    /* Tuple2<double, double>(newRead.latitude, newRead.longitude); */
+    var newGeoFilt = [newRead.latitude, newRead.longitude];
 
-    /* if (prevLat != 0 && prevLong != 0) { */
-    /*   newGeoFilt = */
-    /*       updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong); */
-    /* } */
+    if (prevLat != 0 && prevLong != 0) {
+      newGeoFilt = updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+    }
     // Actualizar lecturas de velocidad y coordenadas.
 
     /* final readFiltered = Position( */
