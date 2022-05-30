@@ -3,7 +3,7 @@ import 'package:deteccion_de_baches/src/utils/scaler.dart';
 import 'package:deteccion_de_baches/src/utils/tools.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
-import 'package:sensors_plus/sensors_plus.dartaaaaaaaaaaaaaaaa';
+import 'package:sensors_plus/sensors_plus.dartaaaaaaaaaaaaaaaaaaaasdaaaaaaa';
 import 'package:flutter/services.dart';
 
 import 'package:deteccion_de_baches/src/utils/permissions.dart';
