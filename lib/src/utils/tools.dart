@@ -1,3 +1,3 @@
-double recomputeSampleRate(int sampleCount, double velocity) {
-  return 1	/ (velocity * sampleCount / 3.6);
+double recomputeSamplingRate(int sampleCount, double speed) {
+  return 1	/ (sampleCount * speed / 3.6);
 }

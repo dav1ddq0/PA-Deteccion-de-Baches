@@ -54,7 +54,7 @@ class MyHomePageState extends State<MyHomePage> {
   final List<Position?> geoLoc = [];
   final List<double> speedRead = [];
 
-  late Position? prevGeoLoc;
+  late Position? prevGeoLocSpeedComp;
 
   late Timer accelTimer;
   late Timer speedTimer;
@@ -126,18 +126,22 @@ class MyHomePageState extends State<MyHomePage> {
     }
 
     final double currSpeed = computeSpeed(
-        prevGeoLoc!.latitude,
-        prevGeoLoc!.longitude,
+        prevGeoLocSpeedComp!.latitude,
+        prevGeoLocSpeedComp!.longitude,
         geoLoc.last!.latitude,
         geoLoc.last!.longitude,
         (speedReadIntervals / 1000));
 
     if (currSpeed != 0) {
-      accelReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
-      geoLocReadIntervals = (1000 * recomputeSampleRate(1, currSpeed)).floor();
+	  double newSamplingRate = recomputeSamplingRate(1, currSpeed);
+	  accelReadIntervals = (1000 * newSamplingRate).floor();
+	  geoLocReadIntervals = (1000 * newSamplingRate).floor();
     }
 
     setState(() {
+      if (geoLoc.isNotEmpty) {
+        prevGeoLocSpeedComp = geoLoc.last;
+      }
       speedRead.add(currSpeed);
     });
   }
@@ -275,9 +279,6 @@ class MyHomePageState extends State<MyHomePage> {
     /* ); */
 
     setState(() {
-      if (geoLoc.isNotEmpty) {
-        prevGeoLoc = geoLoc.last;
-      }
       geoLoc.add(newRead);
     });
   }
