@@ -54,7 +54,7 @@ class MyHomePageState extends State<MyHomePage> {
   final List<Position?> geoLoc = [];
   final List<double> speedRead = [];
 
-  late Position? prevGeoLocSpeedComp;
+  Position? prevGeoLocSpeedComp;
 
   late Timer accelTimer;
   late Timer speedTimer;
@@ -133,9 +133,9 @@ class MyHomePageState extends State<MyHomePage> {
         (speedReadIntervals / 1000));
 
     if (currSpeed != 0) {
-	  double newSamplingRate = recomputeSamplingRate(1, currSpeed);
-	  accelReadIntervals = (1000 * newSamplingRate).floor();
-	  geoLocReadIntervals = (1000 * newSamplingRate).floor();
+      double newSamplingRate = recomputeSamplingRate(1, currSpeed);
+      accelReadIntervals = (1000 * newSamplingRate).floor();
+      geoLocReadIntervals = (1000 * newSamplingRate).floor();
     }
 
     setState(() {
@@ -167,24 +167,20 @@ class MyHomePageState extends State<MyHomePage> {
 
   void labelAnomaly() {
     if (currentPosition != null) {
-      collectedData.saveToJson2(
-          '$mainDirectory/${subdirectories[1]}', currentPosition!);
+      collectedData.saveToJson2('$mainDirectory/${subdirectories[1]}', currentPosition!);
     }
   }
 
   void switchTimerAndEvents() {
     if (scanning) {
-      accelTimer =
-          Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
+      accelTimer = Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
         storeSensorData();
       });
-      geoLocTimer =
-          Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
+      geoLocTimer = Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
         storeGeoData();
       });
 
-      speedTimer = Timer.periodic(
-          const Duration(milliseconds: speedReadIntervals), (timer) {
+      speedTimer = Timer.periodic(const Duration(milliseconds: speedReadIntervals), (timer) {
         updateSpeedRead();
       });
 
@@ -205,19 +201,21 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void switchScanning() {
+  void switchScanning() async {
     setState(() {
       scanning = !scanning;
     });
 
-    setState(() {
-      if (sensorData.isNotEmpty && !scanning) {
-        collectedData.saveToJson(
-            '$mainDirectory/${subdirectories[0]}', sensorData);
-      }
-    });
-
-    switchTimerAndEvents();
+	if (!scanning) {
+	  if (sensorData.isNotEmpty) {
+		await collectedData.saveToJson('$mainDirectory/${subdirectories[0]}', sensorData);
+	  }
+	  prevGeoLocSpeedComp = null;
+	  sensorData.clear();
+	  geoLoc.clear();
+	  speedRead.clear();
+	}
+	switchTimerAndEvents();
   }
 
   Future<void> storeGeoData() async {
@@ -262,24 +260,25 @@ class MyHomePageState extends State<MyHomePage> {
     var newGeoFilt = [newRead.latitude, newRead.longitude];
 
     if (prevLat != 0 && prevLong != 0) {
-      newGeoFilt =
-          updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+      newGeoFilt = updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
     }
+
     // Actualizar lecturas de velocidad y coordenadas.
 
-    /* final readFiltered = Position( */
-    /*   latitude: newGeoFilt.item1, */
-    /*   longitude: newGeoFilt.item2, */
-    /*   timestamp: newRead.timestamp, */
-    /*   accuracy: newRead.accuracy, */
-    /*   altitude: newRead.altitude, */
-    /*   heading: newRead.heading, */
-    /*   speed: newRead.speed, */
-    /*   speedAccuracy: newRead.speedAccuracy, */
-    /* ); */
+    final readFiltered = Position(
+      latitude: newGeoFilt[0],
+      longitude: newGeoFilt[1],
+      timestamp: newRead.timestamp,
+      accuracy: newRead.accuracy,
+      altitude: newRead.altitude,
+      heading: newRead.heading,
+      speed: newRead.speed,
+      speedAccuracy: newRead.speedAccuracy,
+    );
 
+	prevGeoLocSpeedComp ??= readFiltered;
     setState(() {
-      geoLoc.add(newRead);
+      geoLoc.add(readFiltered);
     });
   }
 
