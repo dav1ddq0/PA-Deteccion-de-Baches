@@ -520,7 +520,10 @@ class MyHomePageState extends State<MyHomePage> {
                       collectedData.saveToJson(
                           '$mainDirectory/${subdirectories[2]}', sensorData,
                           filename: filename);
+
                       sensorData.clear();
+                      collectedData
+                          .deleteFile('$mainDirectory/${subdirectories[0]}');
                       Navigator.pop(context);
                     },
                   ),
