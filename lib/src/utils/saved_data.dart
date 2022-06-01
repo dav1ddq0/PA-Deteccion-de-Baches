@@ -98,6 +98,13 @@ class JData {
     return filePath;
   }
 
+  Future<void> deleteFile(String filename) async {
+    File file = File(filename);
+    if (file.existsSync()) {
+      await file.delete();
+    }
+  }
+
   /* Future<File> get templocalFile async { */
   /*   await createBumpFolder(); */
   /*   // final path = await localPath; */

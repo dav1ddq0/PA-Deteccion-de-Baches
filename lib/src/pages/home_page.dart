@@ -133,9 +133,9 @@ class MyHomePageState extends State<MyHomePage> {
         (speedReadIntervals / 1000));
 
     if (currSpeed != 0) {
-	  double newSamplingRate = recomputeSamplingRate(1, currSpeed);
-	  accelReadIntervals = (1000 * newSamplingRate).floor();
-	  geoLocReadIntervals = (1000 * newSamplingRate).floor();
+      double newSamplingRate = recomputeSamplingRate(1, currSpeed);
+      accelReadIntervals = (1000 * newSamplingRate).floor();
+      geoLocReadIntervals = (1000 * newSamplingRate).floor();
     }
 
     setState(() {
@@ -521,7 +521,10 @@ class MyHomePageState extends State<MyHomePage> {
                       collectedData.saveToJson(
                           '$mainDirectory/${subdirectories[2]}', sensorData,
                           filename: filename);
+
                       sensorData.clear();
+                      collectedData
+                          .deleteFile('$mainDirectory/${subdirectories[0]}');
                       Navigator.pop(context);
                     },
                   ),
