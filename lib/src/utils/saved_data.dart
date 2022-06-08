@@ -42,8 +42,7 @@ class JData {
     final File jsonFile = File('$dataPath/$filename.json');
 
     if (jsonFile.existsSync()) {
-      List<Map<String, dynamic>> jsonFileContent =
-          json.decode(jsonFile.readAsStringSync());
+      List<dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
 
       // for (int i = 0; i < data.length; i++) {
       //   jsonFileContent.add(data[i]);

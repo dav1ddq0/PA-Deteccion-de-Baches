@@ -47,6 +47,7 @@ class MyHomePageState extends State<MyHomePage> {
   int accelReadIntervals = 100;
   int geoLocReadIntervals = 1000;
   static const int speedReadIntervals = 5000;
+  int geoReadings = 0;
 
   final streamSubscriptions = <StreamSubscription<dynamic>>[];
 
@@ -125,126 +126,32 @@ class MyHomePageState extends State<MyHomePage> {
       speedRead.removeAt(0);
     }
 
-    final double currSpeed = computeSpeed(
-        prevGeoLocSpeedComp!.latitude,
-        prevGeoLocSpeedComp!.longitude,
-        geoLoc.last!.latitude,
-        geoLoc.last!.longitude,
-        (speedReadIntervals / 1000));
+    if (prevGeoLocSpeedComp != null) {
+      final double currSpeed = computeSpeed(
+          prevGeoLocSpeedComp!.latitude,
+          prevGeoLocSpeedComp!.longitude,
+          geoLoc.last!.latitude,
+          geoLoc.last!.longitude,
+          (speedReadIntervals / 1000));
 
-    if (currSpeed != 0) {
-      double newSamplingRate = recomputeSamplingRate(1, currSpeed);
-      accelReadIntervals = (1000 * newSamplingRate).floor();
-      geoLocReadIntervals = (1000 * newSamplingRate).floor();
-    }
-
-    setState(() {
-      if (geoLoc.isNotEmpty) {
-        prevGeoLocSpeedComp = geoLoc.last;
+      if (currSpeed != 0) {
+        double newSamplingRate = recomputeSamplingRate(1, currSpeed);
+        accelReadIntervals = (1000 * newSamplingRate).floor();
+        geoLocReadIntervals = (1000 * newSamplingRate).floor();
       }
-      speedRead.add(currSpeed);
-    });
-  }
 
-  void subscribeAccelEventListener() {
-    streamSubscriptions
-        .add(userAccelerometerEvents.listen((UserAccelerometerEvent event) {
       setState(() {
-        accelEvent = event;
-      });
-    }));
-  }
-
-  void subscribeGyroEventListener() {
-    streamSubscriptions.add(gyroscopeEvents.listen((GyroscopeEvent event) {
-      setState(() {
-        gyroEvent = event;
-      });
-    }));
-  }
-
-  // Métodos activados por onPressed
-
-  void labelAnomaly() {
-    if (currentPosition != null) {
-      collectedData.saveToJson2('$mainDirectory/${subdirectories[1]}', currentPosition!);
-    }
-  }
-
-  void switchTimerAndEvents() {
-    if (scanning) {
-      accelTimer = Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
-        storeSensorData();
-      });
-      geoLocTimer = Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
-        storeGeoData();
-      });
-
-      speedTimer = Timer.periodic(const Duration(milliseconds: speedReadIntervals), (timer) {
-        updateSpeedRead();
-      });
-
-      if (streamSubscriptions.isEmpty) {
-        subscribeAccelEventListener();
-        subscribeGyroEventListener();
-      } else {
-        for (var subscription in streamSubscriptions) {
-          subscription.resume();
+        if (geoLoc.isNotEmpty) {
+          prevGeoLocSpeedComp = geoLoc.last;
         }
-      }
-    } else {
-      geoLocTimer.cancel();
-      accelTimer.cancel();
-      for (var subscription in streamSubscriptions) {
-        subscription.pause();
-      }
+        speedRead.add(currSpeed);
+      });
     }
-  }
-
-  void switchScanning() async {
-    setState(() {
-      scanning = !scanning;
-    });
-
-	if (!scanning) {
-	  if (sensorData.isNotEmpty) {
-		await collectedData.saveToJson('$mainDirectory/${subdirectories[0]}', sensorData);
-	  }
-	  prevGeoLocSpeedComp = null;
-	  sensorData.clear();
-	  geoLoc.clear();
-	  speedRead.clear();
-	}
-	switchTimerAndEvents();
   }
 
   Future<void> storeGeoData() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
-      await Geolocator.openLocationSettings();
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
+    final double prevLat = geoLoc.isEmpty ? 0 : geoLoc.last!.latitude;
+    final double prevLong = geoLoc.isEmpty ? 0 : geoLoc.last!.longitude;
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
@@ -254,13 +161,11 @@ class MyHomePageState extends State<MyHomePage> {
     // double currLat = double.parse(newRead.latitude.toStringAsPrecision(10));
     // double currLong = double.parse(newRead.longitude.toStringAsPrecision(10));
 
-    final double prevLat = geoLoc.isEmpty ? 0 : geoLoc.last!.latitude;
-    final double prevLong = geoLoc.isEmpty ? 0 : geoLoc.last!.longitude;
-
     var newGeoFilt = [newRead.latitude, newRead.longitude];
 
     if (prevLat != 0 && prevLong != 0) {
-      newGeoFilt = updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+      newGeoFilt =
+          updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
     }
 
     // Actualizar lecturas de velocidad y coordenadas.
@@ -276,7 +181,8 @@ class MyHomePageState extends State<MyHomePage> {
       speedAccuracy: newRead.speedAccuracy,
     );
 
-	prevGeoLocSpeedComp ??= readFiltered;
+    prevGeoLocSpeedComp ??= readFiltered;
+
     setState(() {
       geoLoc.add(readFiltered);
     });
@@ -323,6 +229,89 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  // Subscripciones a los eventos del giroscopio y acelerómetro
+
+  void subscribeAccelEventListener() {
+    streamSubscriptions
+        .add(userAccelerometerEvents.listen((UserAccelerometerEvent event) {
+      setState(() {
+        accelEvent = event;
+      });
+    }));
+  }
+
+  void subscribeGyroEventListener() {
+    streamSubscriptions.add(gyroscopeEvents.listen((GyroscopeEvent event) {
+      setState(() {
+        gyroEvent = event;
+      });
+    }));
+  }
+
+  // Métodos activados por onPressed
+
+  void labelAnomaly() {
+    if (currentPosition != null) {
+      collectedData.saveToJson2(
+          '$mainDirectory/${subdirectories[1]}', currentPosition!);
+    }
+  }
+
+  void switchTimerAndEvents() {
+    if (scanning) {
+      accelTimer =
+          Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
+        storeSensorData();
+      });
+      geoLocTimer =
+          Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
+        storeGeoData();
+        geoReadings++;
+        if (geoReadings == 5) {
+          updateSpeedRead();
+          geoReadings = 0;
+        }
+      });
+
+      /* speedTimer = Timer.periodic( */
+      /*     const Duration(milliseconds: speedReadIntervals), (timer) { */
+      /* }); */
+
+      if (streamSubscriptions.isEmpty) {
+        subscribeAccelEventListener();
+        subscribeGyroEventListener();
+      } else {
+        for (var subscription in streamSubscriptions) {
+          subscription.resume();
+        }
+      }
+    } else {
+      geoLocTimer.cancel();
+      accelTimer.cancel();
+      for (var subscription in streamSubscriptions) {
+        subscription.pause();
+      }
+    }
+  }
+
+  void switchScanning() async {
+    setState(() {
+      scanning = !scanning;
+    });
+
+    if (!scanning) {
+      if (sensorData.isNotEmpty) {
+        await collectedData.saveToJson(
+            '$mainDirectory/${subdirectories[0]}', sensorData);
+      }
+      prevGeoLocSpeedComp = null;
+      sensorData.clear();
+      geoLoc.clear();
+      speedRead.clear();
+    }
+    switchTimerAndEvents();
+  }
+
   /* Future<void> updateFilterGyroData() async { */
   /*   final double currReadX = double.parse(gyroEvent.x.toStringAsPrecision(6)); */
   /*   final double currReadY = double.parse(gyroEvent.y.toStringAsPrecision(6)); */
@@ -344,7 +333,8 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    makeAppFolders(mainDirectory, subdirectories);
+    makeAppFolders(mainDirectory, subdirectories)
+        .then((value) => grantLocationPermission());
 
     return Scaffold(
       appBar: AppBar(
