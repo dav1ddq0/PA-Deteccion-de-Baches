@@ -229,6 +229,23 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  /* Future<void> updateFilterGyroData() async { */
+  /*   final double currReadX = double.parse(gyroEvent.x.toStringAsPrecision(6)); */
+  /*   final double currReadY = double.parse(gyroEvent.y.toStringAsPrecision(6)); */
+  /*   final double currReadZ = double.parse(gyroEvent.z.toStringAsPrecision(6)); */
+
+  /*   final double prevReadX = gyroRead.isEmpty ? 0 : gyroRead.last.x; */
+  /*   final double prevReadY = gyroRead.isEmpty ? 0 : gyroRead.last.y; */
+  /*   final double prevReadZ = gyroRead.isEmpty ? 0 : gyroRead.last.z; */
+
+  /*   /1* final newGyroFilt = updateGyroData( *1/ */
+  /*   /1*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); *1/ */
+
+  /*   setState(() { */
+  /*     gyroRead.add(GyroscopeData(x: currReadX, y: currReadY, z: currReadZ)); */
+  /*   }); */
+  /* } */
+
   // Subscripciones a los eventos del giroscopio y acelerómetro
 
   void subscribeAccelEventListener() {
@@ -308,26 +325,11 @@ class MyHomePageState extends State<MyHomePage> {
       sensorData.clear();
       geoLoc.clear();
       speedRead.clear();
+    } else {
+      collectedData.deleteFile('$mainDirectory/${subdirectories[0]}/bumps.json');
     }
     switchTimerAndEvents();
   }
-
-  /* Future<void> updateFilterGyroData() async { */
-  /*   final double currReadX = double.parse(gyroEvent.x.toStringAsPrecision(6)); */
-  /*   final double currReadY = double.parse(gyroEvent.y.toStringAsPrecision(6)); */
-  /*   final double currReadZ = double.parse(gyroEvent.z.toStringAsPrecision(6)); */
-
-  /*   final double prevReadX = gyroRead.isEmpty ? 0 : gyroRead.last.x; */
-  /*   final double prevReadY = gyroRead.isEmpty ? 0 : gyroRead.last.y; */
-  /*   final double prevReadZ = gyroRead.isEmpty ? 0 : gyroRead.last.z; */
-
-  /*   /1* final newGyroFilt = updateGyroData( *1/ */
-  /*   /1*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); *1/ */
-
-  /*   setState(() { */
-  /*     gyroRead.add(GyroscopeData(x: currReadX, y: currReadY, z: currReadZ)); */
-  /*   }); */
-  /* } */
 
   // Método para construir el Widget
 
@@ -511,9 +513,6 @@ class MyHomePageState extends State<MyHomePage> {
                           '$mainDirectory/${subdirectories[2]}', sensorData,
                           filename: filename);
 
-                      sensorData.clear();
-                      collectedData
-                          .deleteFile('$mainDirectory/${subdirectories[0]}');
                       Navigator.pop(context);
                     },
                   ),
