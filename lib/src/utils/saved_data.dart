@@ -98,7 +98,7 @@ class JData {
   }
 
   Future<void> deleteFile(String filename) async {
-    File file = File('$fileName');
+    File file = File(fileName);
     if (file.existsSync()) {
       await file.delete();
     }

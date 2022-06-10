@@ -88,7 +88,7 @@ double computeSpeed(double prevLat, double prevLong, double currLat,
 
   final double distance =
       distanceHaversine(prevLat, prevLong, currLat, currLong);
-  return distance / (timeInterval / 3600);
+  return double.parse((distance / (timeInterval / 3600)).toStringAsPrecision(7));
 }
 
 // Llevar de grados a radianes

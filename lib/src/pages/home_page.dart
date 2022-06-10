@@ -150,6 +150,7 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> storeGeoData() async {
+    grantLocationPermission();
     final double prevLat = geoLoc.isEmpty ? 0 : geoLoc.last!.latitude;
     final double prevLong = geoLoc.isEmpty ? 0 : geoLoc.last!.longitude;
 
@@ -269,6 +270,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   void labelAnomaly() {
     if (currentPosition != null) {
+      makeAppFolders(mainDirectory, subdirectories);
       collectedData.saveToJson2(
           '$mainDirectory/${subdirectories[1]}', currentPosition!);
     }
@@ -318,6 +320,7 @@ class MyHomePageState extends State<MyHomePage> {
 
     if (!scanning) {
       if (sensorData.isNotEmpty) {
+        makeAppFolders(mainDirectory, subdirectories);
         await collectedData.saveToJson(
             '$mainDirectory/${subdirectories[0]}', sensorData);
       }
@@ -326,7 +329,8 @@ class MyHomePageState extends State<MyHomePage> {
       geoLoc.clear();
       speedRead.clear();
     } else {
-      collectedData.deleteFile('$mainDirectory/${subdirectories[0]}/bumps.json');
+      String fileName = '$mainDirectory/${subdirectories[0]}/bumps.json';
+      await collectedData.deleteFile(fileName);
     }
     switchTimerAndEvents();
   }
@@ -369,6 +373,7 @@ class MyHomePageState extends State<MyHomePage> {
   List<Widget> createPagesAccessItems(
       List<dynamic>? data, BuildContext context) {
     List<Widget> pagesItems = [];
+
     SizeConfig tilesSizeConfig = SizeConfig(context);
 
     if (data != null) {
@@ -429,14 +434,14 @@ class MyHomePageState extends State<MyHomePage> {
           const ListTile(
             leading: Icon(Icons.speed),
             title: Text(
-              'curr speed',
-              style: TextStyle(fontSize: 24),
+              'Speed',
+              style: TextStyle(fontSize: 20),
             ),
           ),
           Text(
             speedRead.isEmpty ? 'None' : '${speedRead.last} km/h',
             style: TextStyle(
-                fontSize: 40,
+                fontSize: 24,
                 color: speedRead.isEmpty ? Colors.blueAccent : Colors.amber),
           ),
         ],
@@ -444,6 +449,32 @@ class MyHomePageState extends State<MyHomePage> {
       const SizedBox(
         height: 10,
       ),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+        Column(
+          children: [
+            const Text(
+              'Accel X',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              sensorData.isNotEmpty ? '${sensorData.last['accelerometer'][0]}' : 'None',
+              style: const TextStyle(fontSize: 18, color: Colors.purple),
+            ),
+          ],
+        ),
+        Column(
+          children: [
+            const Text(
+              'Accel y',
+              style: TextStyle(fontSize: 18),
+            ),
+            Text(
+              sensorData.isNotEmpty ? '${sensorData.last['accelerometer'][1]}' : 'None',
+              style: const TextStyle(fontSize: 18, color: Colors.purple),
+            ),
+          ],
+        ),
+      ]),
       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         Column(
           children: [
@@ -509,6 +540,7 @@ class MyHomePageState extends State<MyHomePage> {
                     child: const Text('SAVE'),
                     onPressed: () {
                       filename = fileNameController.text;
+                      makeAppFolders(mainDirectory, subdirectories);
                       collectedData.saveToJson(
                           '$mainDirectory/${subdirectories[2]}', sensorData,
                           filename: filename);
