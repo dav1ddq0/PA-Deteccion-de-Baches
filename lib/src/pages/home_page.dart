@@ -284,9 +284,9 @@ class MyHomePageState extends State<MyHomePage> {
     geoLocTimer =
         Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
       storeGeoData();
+      updateSpeedRead();
       geoReadings++;
       if (geoReadings == 5) {
-        updateSpeedRead();
         geoReadings = 0;
         accelTimer.cancel();
         geoLocTimer.cancel();
