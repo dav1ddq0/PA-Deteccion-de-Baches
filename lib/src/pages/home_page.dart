@@ -276,22 +276,51 @@ class MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void startTimers() {
+    accelTimer =
+        Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
+      storeSensorData();
+    });
+    geoLocTimer =
+        Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
+      storeGeoData();
+      geoReadings++;
+      if (geoReadings == 5) {
+        updateSpeedRead();
+        geoReadings = 0;
+        accelTimer.cancel();
+        geoLocTimer.cancel();
+        startTimers();
+      }
+    });
+  }
+
+  void switchScanning() async {
+    setState(() {
+      scanning = !scanning;
+    });
+
+    if (!scanning) {
+      if (sensorData.isNotEmpty) {
+        makeAppFolders(mainDirectory, subdirectories);
+        await collectedData.saveToJson(
+            '$mainDirectory/${subdirectories[0]}', sensorData);
+      }
+
+      prevGeoLocSpeedComp = null;
+      sensorData.clear();
+      geoLoc.clear();
+      speedRead.clear();
+    } else {
+      String fileName = '$mainDirectory/${subdirectories[0]}/bumps.json';
+      await collectedData.deleteFile(fileName);
+    }
+    switchTimerAndEvents();
+  }
+
   void switchTimerAndEvents() {
     if (scanning) {
-      accelTimer =
-          Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
-        storeSensorData();
-      });
-      geoLocTimer =
-          Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
-        storeGeoData();
-        geoReadings++;
-        if (geoReadings == 5) {
-          updateSpeedRead();
-          geoReadings = 0;
-        }
-      });
-
+      startTimers();
       /* speedTimer = Timer.periodic( */
       /*     const Duration(milliseconds: speedReadIntervals), (timer) { */
       /* }); */
@@ -311,28 +340,6 @@ class MyHomePageState extends State<MyHomePage> {
         subscription.pause();
       }
     }
-  }
-
-  void switchScanning() async {
-    setState(() {
-      scanning = !scanning;
-    });
-
-    if (!scanning) {
-      if (sensorData.isNotEmpty) {
-        makeAppFolders(mainDirectory, subdirectories);
-        await collectedData.saveToJson(
-            '$mainDirectory/${subdirectories[0]}', sensorData);
-      }
-      prevGeoLocSpeedComp = null;
-      sensorData.clear();
-      geoLoc.clear();
-      speedRead.clear();
-    } else {
-      String fileName = '$mainDirectory/${subdirectories[0]}/bumps.json';
-      await collectedData.deleteFile(fileName);
-    }
-    switchTimerAndEvents();
   }
 
   // Método para construir el Widget
@@ -457,7 +464,9 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              sensorData.isNotEmpty ? '${sensorData.last['accelerometer'][0]}' : 'None',
+              sensorData.isNotEmpty
+                  ? '${sensorData.last['accelerometer'][0]}'
+                  : 'None',
               style: const TextStyle(fontSize: 18, color: Colors.purple),
             ),
           ],
@@ -469,7 +478,9 @@ class MyHomePageState extends State<MyHomePage> {
               style: TextStyle(fontSize: 18),
             ),
             Text(
-              sensorData.isNotEmpty ? '${sensorData.last['accelerometer'][1]}' : 'None',
+              sensorData.isNotEmpty
+                  ? '${sensorData.last['accelerometer'][1]}'
+                  : 'None',
               style: const TextStyle(fontSize: 18, color: Colors.purple),
             ),
           ],
