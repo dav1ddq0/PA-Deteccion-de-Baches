@@ -194,15 +194,15 @@ class MyHomePageState extends State<MyHomePage> {
     /* final newAccelFilt = updateAccelData( */
     /*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); */
     final double accelReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double accelReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double accelReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double accelReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
+    final double accelReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
 
     final AccelerometerData accelData =
         AccelerometerData(x: accelReadX, y: accelReadY, z: accelReadZ);
 
     final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double gyroReadY = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double gyroReadZ = double.parse(accelEvent.x.toStringAsPrecision(6));
+    final double gyroReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
+    final double gyroReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
 
     final GyroscopeData gyroData =
         GyroscopeData(x: gyroReadX, y: gyroReadY, z: gyroReadZ);
