@@ -44,7 +44,7 @@ class MyHomePageState extends State<MyHomePage> {
   late TextEditingController fileNameController;
   String filename = '';
 
-  int accelReadIntervals = 100;
+  int accelReadIntervals = 1000;
   int geoLocReadIntervals = 1000;
   static const int speedReadIntervals = 5000;
   int geoReadings = 0;
@@ -80,8 +80,8 @@ class MyHomePageState extends State<MyHomePage> {
   // Métodos auxiliares
 
   List<double> updateGeoData(double currLat, currLong, prevLat, prevLong) {
-    if (geoLoc.length == 1000) {
-      geoLoc.removeAt(0);
+    if (geoLoc.length == 5000) {
+      geoLoc.clear();
     }
 
     return biAxialLowpassFilter(prevLat, prevLong, currLat, currLong);
@@ -122,12 +122,12 @@ class MyHomePageState extends State<MyHomePage> {
   /* } */
 
   Future<void> updateSpeedRead() async {
-    if (speedRead.length == 1000) {
+    if (speedRead.length == 5000) {
       speedRead.removeAt(0);
     }
 
     if (prevGeoLocSpeedComp != null) {
-      final double currSpeed = computeSpeed(
+      double currSpeed = computeSpeed(
           prevGeoLocSpeedComp!.latitude,
           prevGeoLocSpeedComp!.longitude,
           geoLoc.last!.latitude,
@@ -139,6 +139,7 @@ class MyHomePageState extends State<MyHomePage> {
         accelReadIntervals = (1000 * newSamplingRate).floor();
         geoLocReadIntervals = (1000 * newSamplingRate).floor();
       }
+      /* currSpeed = speedRead.last * 0.8 + currSpeed * 0.2; */
 
       setState(() {
         if (geoLoc.isNotEmpty) {
@@ -205,6 +206,12 @@ class MyHomePageState extends State<MyHomePage> {
 
     final GyroscopeData gyroData =
         GyroscopeData(x: gyroReadX, y: gyroReadY, z: gyroReadZ);
+
+    if (sensorData.length == 10) {
+      await collectedData.saveToJson(
+          '$mainDirectory/${subdirectories[0]}', sensorData);
+      sensorData.clear();
+    }
 
     setState(() {
       if (currentPosition != null) {
@@ -284,13 +291,25 @@ class MyHomePageState extends State<MyHomePage> {
     geoLocTimer =
         Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
       storeGeoData();
+    });
+    speedTimer =
+        Timer.periodic(const Duration(milliseconds: speedReadIntervals), (timer) {
       updateSpeedRead();
       geoReadings++;
       if (geoReadings == 5) {
         geoReadings = 0;
         accelTimer.cancel();
         geoLocTimer.cancel();
-        startTimers();
+
+        accelTimer =
+            Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
+          storeSensorData();
+        });
+
+        geoLocTimer = Timer.periodic(
+            Duration(milliseconds: geoLocReadIntervals), (timer) {
+          storeGeoData();
+        });
       }
     });
   }
