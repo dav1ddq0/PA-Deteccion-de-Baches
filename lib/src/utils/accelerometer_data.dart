@@ -2,8 +2,13 @@ class AccelerometerData {
   double x;
   double y;
   double z;
+  int samplingRate;
 
-  AccelerometerData({required this.x, required this.y, required this.z});
+  AccelerometerData(
+      {required this.x,
+      required this.y,
+      required this.z,
+      required this.samplingRate});
 
   @override
   String toString() {
@@ -13,5 +18,3 @@ class AccelerometerData {
   List<double> get values => [x, y, z];
   Map<String, dynamic> toJson() => {};
 }
-
-var acc1 = AccelerometerData(x: 1, y: 3, z: 4);

@@ -77,6 +77,10 @@ class MyHomePageState extends State<MyHomePage> {
   Position? get currentPosition {
     return geoLoc.isNotEmpty ? geoLoc.last : null;
   }
+
+  double get currentSpeed {
+    return speedRead.isNotEmpty ? speedRead.last : -1;
+  }
   // Métodos auxiliares
 
   List<double> updateGeoData(double currLat, currLong, prevLat, prevLong) {
@@ -197,17 +201,23 @@ class MyHomePageState extends State<MyHomePage> {
     final double accelReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
     final double accelReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
 
-    final AccelerometerData accelData =
-        AccelerometerData(x: accelReadX, y: accelReadY, z: accelReadZ);
+    final AccelerometerData accelData = AccelerometerData(
+        x: accelReadX,
+        y: accelReadY,
+        z: accelReadZ,
+        samplingRate: accelReadIntervals);
 
     final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
     final double gyroReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
     final double gyroReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
 
-    final GyroscopeData gyroData =
-        GyroscopeData(x: gyroReadX, y: gyroReadY, z: gyroReadZ);
+    final GyroscopeData gyroData = GyroscopeData(
+        x: gyroReadX,
+        y: gyroReadY,
+        z: gyroReadZ,
+        samplingRate: accelReadIntervals);
 
-    if (sensorData.length == 10) {
+    if (sensorData.length == 3250) {
       await collectedData.saveToJson(
           '$mainDirectory/${subdirectories[0]}', sensorData);
       sensorData.clear();
@@ -221,7 +231,9 @@ class MyHomePageState extends State<MyHomePage> {
           'gps': {
             'latitude': currentPosition!.latitude,
             'longitude': currentPosition!.longitude
-          }
+          },
+          'speed': currentSpeed,
+          'sampling': accelReadIntervals
         });
 
         /* accelRead */
@@ -292,8 +304,8 @@ class MyHomePageState extends State<MyHomePage> {
         Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
       storeGeoData();
     });
-    speedTimer =
-        Timer.periodic(const Duration(milliseconds: speedReadIntervals), (timer) {
+    speedTimer = Timer.periodic(
+        const Duration(milliseconds: speedReadIntervals), (timer) {
       updateSpeedRead();
       geoReadings++;
       if (geoReadings == 5) {
