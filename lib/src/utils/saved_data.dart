@@ -81,6 +81,16 @@ class JData {
     }
   }
 
+  Future<void> exportData(
+      String dataPath, String filename, String tempFilePath) async {
+    final File jsonFile = File('$tempFilePath/marks.json');
+    if (jsonFile.existsSync()) {
+      List<Map<String, dynamic>> jsonFileContent =
+          json.decode(jsonFile.readAsStringSync());
+      saveToJson(dataPath, jsonFileContent, filename: filename);
+    }
+  }
+
   Future<File> createFile(Map<String, int> content) async {
     File file = File(dir.path + "/" + fileName);
     // file.copySync();

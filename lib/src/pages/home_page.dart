@@ -583,9 +583,10 @@ class MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       filename = fileNameController.text;
                       makeAppFolders(mainDirectory, subdirectories);
-                      collectedData.saveToJson(
-                          '$mainDirectory/${subdirectories[2]}', sensorData,
-                          filename: filename);
+                      collectedData.exportData(
+                          '$mainDirectory/${subdirectories[2]}',
+                          filename,
+                          '$mainDirectory/${subdirectories[0]}');
 
                       Navigator.pop(context);
                     },
