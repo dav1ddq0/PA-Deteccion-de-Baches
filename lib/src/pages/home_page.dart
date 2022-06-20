@@ -217,7 +217,7 @@ class MyHomePageState extends State<MyHomePage> {
         z: gyroReadZ,
         samplingRate: accelReadIntervals);
 
-    if (sensorData.length == 3250) {
+    if (sensorData.length == 10) {
       await collectedData.saveToJson(
           '$mainDirectory/${subdirectories[0]}', sensorData);
       sensorData.clear();
@@ -367,6 +367,7 @@ class MyHomePageState extends State<MyHomePage> {
     } else {
       geoLocTimer.cancel();
       accelTimer.cancel();
+      speedTimer.cancel();
       for (var subscription in streamSubscriptions) {
         subscription.pause();
       }
@@ -583,9 +584,10 @@ class MyHomePageState extends State<MyHomePage> {
                     onPressed: () {
                       filename = fileNameController.text;
                       makeAppFolders(mainDirectory, subdirectories);
-                      collectedData.saveToJson(
-                          '$mainDirectory/${subdirectories[2]}', sensorData,
-                          filename: filename);
+                      collectedData.exportData(
+                          '$mainDirectory/${subdirectories[0]}',
+                          '$mainDirectory/${subdirectories[2]}',
+                          filename);
 
                       Navigator.pop(context);
                     },

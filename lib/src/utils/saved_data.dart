@@ -81,6 +81,25 @@ class JData {
     }
   }
 
+  Future<File> exportData(String dataPath, String pathToExport, String filename) async {
+	final dataFile = File('$dataPath/bumps.json');
+    final File exportedFile = File('$pathToExport/$filename.json');
+	List<dynamic> data = json.decode(dataFile.readAsStringSync());
+
+    if (exportedFile.existsSync()) {
+      List<dynamic> jsonFileContent = json.decode(exportedFile.readAsStringSync());
+
+      // for (int i = 0; i < data.length; i++) {
+      //   jsonFileContent.add(data[i]);
+      // }
+      jsonFileContent.addAll(data);
+      exportedFile.writeAsStringSync(json.encode(jsonFileContent));
+      return exportedFile;
+    } else {
+      exportedFile.writeAsStringSync(json.encode(data));
+      return exportedFile;
+    }
+  }
   Future<File> createFile(Map<String, int> content) async {
     File file = File(dir.path + "/" + fileName);
     // file.copySync();
@@ -98,8 +117,9 @@ class JData {
   }
 
   Future<void> deleteFile(String filename) async {
-    File file = File(fileName);
+    File file = File(filename);
     if (file.existsSync()) {
+	  print('BORRADO ARCHIVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
       await file.delete();
     }
   }
