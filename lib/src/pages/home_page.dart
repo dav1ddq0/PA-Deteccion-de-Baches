@@ -217,7 +217,7 @@ class MyHomePageState extends State<MyHomePage> {
         z: gyroReadZ,
         samplingRate: accelReadIntervals);
 
-    if (sensorData.length == 3250) {
+    if (sensorData.length == 10) {
       await collectedData.saveToJson(
           '$mainDirectory/${subdirectories[0]}', sensorData);
       sensorData.clear();
@@ -367,6 +367,7 @@ class MyHomePageState extends State<MyHomePage> {
     } else {
       geoLocTimer.cancel();
       accelTimer.cancel();
+      speedTimer.cancel();
       for (var subscription in streamSubscriptions) {
         subscription.pause();
       }
