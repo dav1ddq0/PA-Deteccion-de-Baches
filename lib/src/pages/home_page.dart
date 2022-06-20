@@ -62,7 +62,7 @@ class MyHomePageState extends State<MyHomePage> {
   late Timer geoLocTimer;
 
   late GyroscopeEvent gyroEvent;
-  late UserAccelerometerEvent accelEvent;
+  late AccelerometerEvent accelEvent;
   JData collectedData = JData();
 
   bool scanning = false; // Para saber si la app está escaneando o no
@@ -270,7 +270,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   void subscribeAccelEventListener() {
     streamSubscriptions
-        .add(userAccelerometerEvents.listen((UserAccelerometerEvent event) {
+        .add(accelerometerEvents.listen((AccelerometerEvent event) {
       setState(() {
         accelEvent = event;
       });
