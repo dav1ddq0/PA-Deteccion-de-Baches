@@ -207,9 +207,9 @@ class MyHomePageState extends State<MyHomePage> {
         z: accelReadZ,
         samplingRate: accelReadIntervals);
 
-    final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double gyroReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
-    final double gyroReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
+    final double gyroReadX = double.parse(gyroEvent.x.toStringAsPrecision(6));
+    final double gyroReadY = double.parse(gyroEvent.y.toStringAsPrecision(6));
+    final double gyroReadZ = double.parse(gyroEvent.z.toStringAsPrecision(6));
 
     final GyroscopeData gyroData = GyroscopeData(
         x: gyroReadX,
