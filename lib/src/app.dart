@@ -15,6 +15,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import 'utils/gyroscope_data.dart';
+import 'utils/storage_utils.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -43,10 +44,6 @@ class _PotholeState extends State<PotholeApp>
     with SingleTickerProviderStateMixin {
   late TabController controller;
   late bool scanning;
-  IconData playIcon = Icons.play_arrow;
-  IconData stopIcon = Icons.stop;
-  String playText = "Start Recorder";
-  String stopText = "Stop Recorder";
   late int milliseconds;
   late TextEditingController fileNameController;
   final String mainDirectory =
@@ -72,13 +69,28 @@ class _PotholeState extends State<PotholeApp>
 
   late GyroscopeEvent gyroEvent;
   late AccelerometerEvent accelEvent;
-  JData collectedData = JData();
+  late JData collectedData ;
   bool bumpDetected = false;
 
+
+  @override
+  void initState() {
+    super.initState();
+    fileNameController = TextEditingController();
+    controller = TabController(length: 3, vsync: this);
+    scanning = false;
+    collectedData = JData();
+    // _stopwatch = Stopwatch();
+    // _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
+    //   setState(() {});
+    // });
+  }
+
+  // Return the current posution of the device (currernt GPS location)
   Position? get currentPosition {
     return geoLoc.isNotEmpty ? geoLoc.last : null;
   }
-
+  // Return the current speed of the car
   double get currentSpeed {
     return speedRead.isNotEmpty ? speedRead.last : -1;
   }
@@ -107,7 +119,7 @@ class _PotholeState extends State<PotholeApp>
         samplingRate: accelReadIntervals);
 
     if (sensorData.length == 10) {
-      await collectedData.saveToJson(
+      await collectedData.saveRecordToJson(
           '$mainDirectory/${subdirectories[0]}', sensorData);
       sensorData.clear();
     }
@@ -215,15 +227,27 @@ class _PotholeState extends State<PotholeApp>
     }
   }
 
-  void startTimers() {
+
+  void startAccelTimer(){
     accelTimer =
         Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
       storeSensorData();
     });
+  }
+
+  void startGeoTimer() {
     geoLocTimer =
         Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
       storeGeoData();
     });
+  }
+
+
+  void startTimers() {
+
+    startAccelTimer();
+    startGeoTimer();
+    
     speedTimer = Timer.periodic(
         const Duration(milliseconds: speedReadIntervals), (timer) {
       updateSpeedRead();
@@ -233,15 +257,8 @@ class _PotholeState extends State<PotholeApp>
         accelTimer.cancel();
         geoLocTimer.cancel();
 
-        accelTimer =
-            Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
-          storeSensorData();
-        });
-
-        geoLocTimer = Timer.periodic(
-            Duration(milliseconds: geoLocReadIntervals), (timer) {
-          storeGeoData();
-        });
+        startAccelTimer();
+        startGeoTimer();
       }
     });
   }
@@ -250,7 +267,7 @@ class _PotholeState extends State<PotholeApp>
     if (!scanning) {
       if (sensorData.isNotEmpty) {
         makeAppFolders(mainDirectory, subdirectories);
-        await collectedData.saveToJson(
+        await collectedData.saveRecordToJson(
             '$mainDirectory/${subdirectories[0]}', sensorData);
       }
 
@@ -322,17 +339,7 @@ class _PotholeState extends State<PotholeApp>
     milliseconds = crono;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fileNameController = TextEditingController();
-    controller = TabController(length: 3, vsync: this);
-    scanning = false;
-    // _stopwatch = Stopwatch();
-    // _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
-    //   setState(() {});
-    // });
-  }
+  
 
   @override
   bool get wantKeepAlive => true;
@@ -383,7 +390,7 @@ class _PotholeState extends State<PotholeApp>
               latitude: geoLoc.isNotEmpty ? '${geoLoc.last?.latitude}' : 'None',
               longitude:
                   geoLoc.isNotEmpty ? '${geoLoc.last?.longitude}' : 'None',
-              speedRead:speedRead.isEmpty ? 'None' : '${speedRead.last} km/h',
+              speedRead:speedRead.isEmpty ? 'None' : '${speedRead.last}',
               accelX: sensorData.isNotEmpty
                   ? '${sensorData.last['accelerometer'][0]}'
                   : 'None',

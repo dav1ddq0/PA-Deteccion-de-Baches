@@ -45,6 +45,8 @@ dependencies:
   permission_handler: ^9.2.0
   device_info_plus: ^3.2.3
   file_picker: ^4.6.1
+  syncfusion_flutter_charts: ^20.3.50
+  # flutter_launcher_icons: ^0.10.0
 
 dev_dependencies:
   flutter_test:

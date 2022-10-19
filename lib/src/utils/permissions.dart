@@ -28,7 +28,7 @@ Future<void> grantLocationPermission() async {
   }
 }
 
-Future<void> grantStoragePermissions() async {
+Future<void> grantStoragePermission() async {
   var storageStatus = await Permission.storage.status;
 
   if (!storageStatus.isGranted) {
@@ -57,21 +57,3 @@ Future<void> grantStoragePermissions() async {
   }
 }
 
-//Folders needed for data persistence in the application
-Future<void> makeAppFolders(
-    String mainDirectory, List<String> subdirectories) async {
-  await createDirectory(mainDirectory);
-  for (String subdirectory in subdirectories) {
-    await createDirectory('$mainDirectory/$subdirectory');
-  }
-}
-
-Future<void> createDirectory(String dataPath) async {
-  await grantStoragePermissions();
-
-  Directory path = Directory(dataPath);
-
-  if (!(await path.exists())) {
-    await path.create();
-  }
-}

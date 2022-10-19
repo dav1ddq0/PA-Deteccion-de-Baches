@@ -37,7 +37,7 @@ class JData {
 
   // Métodos para obtener lecturas de los senspores y realizar operaciones con esta información
 
-  Future<File> saveToJson(String dataPath, List<dynamic> data,
+  Future<File> saveRecordToJson(String dataPath, List<dynamic> data,
       {String filename = 'bumps'}) async {
     final File jsonFile = File('$dataPath/$filename.json');
 
@@ -56,7 +56,7 @@ class JData {
     }
   }
 
-  Future<File> saveToJson2(String dataPath, Position position) async {
+  Future<File> saveMarksToJson(String dataPath, Position position) async {
     final File jsonFile = File('$dataPath/marks.json');
 
     if (jsonFile.existsSync()) {
@@ -81,12 +81,12 @@ class JData {
     }
   }
 
-  Future<void> exportData(
+  Future<void> exportRecordData(
       String dataPath, String filename, String tempFilePath) async {
     final File jsonFile = File('$tempFilePath/bumps.json');
     if (jsonFile.existsSync()) {
       List<dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
-      saveToJson(dataPath, jsonFileContent, filename: filename);
+      saveRecordToJson(dataPath, jsonFileContent, filename: filename);
     }
   }
 
