@@ -4,11 +4,12 @@ class AccelerometerData {
   double z;
   int samplingRate;
 
-  AccelerometerData(
-      {required this.x,
+  AccelerometerData({
+      required this.x,
       required this.y,
       required this.z,
-      required this.samplingRate});
+      required this.samplingRate
+    });
 
   @override
   String toString() {

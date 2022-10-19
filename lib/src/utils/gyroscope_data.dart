@@ -4,11 +4,13 @@ class GyroscopeData {
   double z;
   int samplingRate;
 
-  GyroscopeData(
-      {required this.x,
+  GyroscopeData({
+      required this.x,
       required this.y,
       required this.z,
-      required this.samplingRate});
+      required this.samplingRate
+      }
+  );
 
   @override
   String toString() {

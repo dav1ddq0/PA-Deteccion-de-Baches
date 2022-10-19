@@ -3,10 +3,12 @@ class GPSData {
   double longitude;
   int samplingRate;
 
-  GPSData(
-      {required this.latitude,
+  GPSData({
+      required this.latitude,
       required this.longitude,
-      required this.samplingRate});
+      required this.samplingRate
+    }
+  );
 
   @override
   String toString() {
