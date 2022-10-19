@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SpeedSensor extends StatefulWidget {
-  final double speed;
+  final String speed;
   SpeedSensor({required this.speed, Key? key}) : super(key: key);
 
   @override

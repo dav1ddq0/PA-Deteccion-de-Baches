@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
 class GPSSensor extends StatefulWidget {
-  GPSSensor({Key? key}) : super(key: key);
+  String latitude;
+  String longitude;
+  GPSSensor({
+    Key? key,
+    required this.latitude,
+    required this.longitude,
+    }) : super(key: key);
 
   @override
   State<GPSSensor> createState() => _GPSSensorState();
@@ -33,9 +39,9 @@ class _GPSSensorState extends State<GPSSensor> {
                 Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children:[                  
-                LatLngRowW(name: "Lat", value: 23.144455),
+                LatLngRowW(name: "Lat", value: widget.latitude),
                 SizedBox(width:40),
-                LatLngRowW(name: "Lng", value: 24.555555)
+                LatLngRowW(name: "Lng", value: widget.longitude)
                 ],
                   )
                  
@@ -54,7 +60,7 @@ class _GPSSensorState extends State<GPSSensor> {
 
 class LatLngRowW extends StatelessWidget {
   final String name;
-  final double value;
+  final String value;
   const LatLngRowW({required this.name, required this.value, Key? key}) : super(key: key);
 
   @override

@@ -2,16 +2,23 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class AccelerometerSensor extends StatefulWidget {
-  AccelerometerSensor({Key? key}) : super(key: key);
+  final String x;
+  final String y;
+  final String z ;
+
+  AccelerometerSensor({
+    Key? key,
+    required this.x,
+    required this.y,
+    required this.z,
+    }) : super(key: key);
 
   @override
   State<AccelerometerSensor> createState() => _AccelerometerSensorState();
 }
 
 class _AccelerometerSensorState extends State<AccelerometerSensor> {
-  late double x = 10.4;
-  late double y = 67;
-  late double z = 10.6;
+  
 
   @override
   Widget build(BuildContext context) {
@@ -31,15 +38,15 @@ class _AccelerometerSensorState extends State<AccelerometerSensor> {
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                AccAxisRowWidget(axisTag: "X Axis:", lecture: x),
-                AccAxisRowWidget(axisTag: "Y Axis:", lecture: y),
-                AccAxisRowWidget(axisTag: "Z Axis:", lecture: z)
+                AccAxisRowWidget(axisTag: "X Axis:", lecture: widget.x),
+                AccAxisRowWidget(axisTag: "Y Axis:", lecture: widget.y),
+                AccAxisRowWidget(axisTag: "Z Axis:", lecture: widget.z),
               ],
             ),
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  x = Random().nextDouble() * Random().nextInt(20);
+                  // x = Random().nextDouble() * Random().nextInt(20);
                 });
               },
               child: Icon(Icons.graphic_eq),
@@ -55,13 +62,14 @@ class _AccelerometerSensorState extends State<AccelerometerSensor> {
 }
 
 class AccAxisRowWidget extends StatelessWidget {
-  late String axisTag;
-  late double lecture;
-  AccAxisRowWidget({required String axisTag, required double lecture, Key? key})
-      : super(key: key) {
-    this.axisTag = axisTag;
-    this.lecture = lecture;
-  }
+  final String axisTag;
+  final String lecture;
+  AccAxisRowWidget({
+    required this.axisTag, 
+    required this.lecture, 
+    Key? key}): super(key: key); 
+   
+
 
   @override
   Widget build(BuildContext context) {

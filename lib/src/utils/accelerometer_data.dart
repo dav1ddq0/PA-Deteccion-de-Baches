@@ -16,6 +16,17 @@ class AccelerometerData {
     return 'Accelerometer{x: $x, y: $y, z: $z}';
   }
 
+  String get xAxis{
+    return x.toString();
+  }
+
+  String get yAxis{
+    return y.toString();
+  }
+
+  String get zAxis{
+    return z.toString();
+  }
   List<double> get values => [x, y, z];
   Map<String, dynamic> toJson() => {};
 }

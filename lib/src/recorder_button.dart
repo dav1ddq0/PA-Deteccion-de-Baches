@@ -26,7 +26,7 @@ class _RecorderButtonState extends State<RecorderButton> {
   String stopText = "Stop Recorder";
   late Timer _timer;
   late Stopwatch _stopwatch;
-  late TextEditingController fileNameController;
+
 
   @override
   void initState() {
