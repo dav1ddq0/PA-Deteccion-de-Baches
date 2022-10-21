@@ -1,10 +1,14 @@
 import 'dart:io';
 
+import 'package:deteccion_de_baches/src/themes/color.dart';
+import 'package:deteccion_de_baches/src/themes/my_style.dart';
+import 'package:deteccion_de_baches/src/utils/storage_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:deteccion_de_baches/src/pages/pothole_snackbar.dart';
 
 class MapTab extends StatefulWidget {
   MapTab({Key? key}) : super(key: key);
@@ -13,76 +17,101 @@ class MapTab extends StatefulWidget {
   State<MapTab> createState() => _MapTabState();
 }
 
-void searchFile() async {
-  FilePickerResult? result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['json'],
-  );
 
-  if (result != null) {
-    //File file = File(result.files.single.path.toString());
-    PlatformFile file = result.files.first;
-
-    print(file.name);
-    print(file.bytes);
-    print(file.size);
-    print(file.extension);
-    print(file.path);
-  } else {
-    // User canceled the picker
-  }
-}
 
 class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
-  List<List<double>> points = [
-    [23.13369, -82.36078]
-  ];
+  List<Map<dynamic,dynamic>> marks = [];
   double zoom = 14.0;
+
+  SnackBar _maxZoomReach() {
+    SnackBar _snackBar =
+        primaryPotholeSnackBar("The maximum zoom has been reached.");
+    return _snackBar;
+  }
+
+  SnackBar _minZoomReach() {
+    SnackBar _snackBar =
+        primaryPotholeSnackBar("The minimum zoom has been reached.");
+    return _snackBar;
+  }
+
+  Widget zoomPlus() {
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15)),
+        onPressed: () {
+          setState(() {
+            if (zoom + 0.5 > 18) {
+              ScaffoldMessenger.of(context).showSnackBar(_maxZoomReach());
+            } else {
+              zoom += 0.5;
+            }
+            print(zoom);
+          });
+        },
+        child: const Icon(
+          Icons.zoom_in,
+          color: PotholeColor.darkText,
+        ));
+  }
+
+  Widget zoomMinus() {
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15)),
+        onPressed: () {
+          setState(() {
+            print(zoom);
+            if (zoom - 0.5 < 6) {
+              ScaffoldMessenger.of(context).showSnackBar(_minZoomReach());
+            } else {
+              zoom -= 0.5;
+            }
+          });
+        },
+        child: Icon(Icons.zoom_out, color: PotholeColor.darkText));
+  }
+
+  Widget addMarks() {
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15)),
+        onPressed: () async {
+          List<Map<dynamic,dynamic>> jsonMarks = await loadMarks();
+          setState(() {
+             if (jsonMarks.isNotEmpty) {
+              marks = jsonMarks;
+             }
+            // final result = await FilePicker.platform.pickFiles();
+            // marks.add({
+            //   'position': [23.13256, -82.36062],
+            //   'label': "prueba"
+            // });
+          });
+        },
+        child: Icon(Icons.add, color: PotholeColor.darkText));
+  }
+
   @override
   Widget build(BuildContext context) {
-    print(points);
     return Scaffold(
-        body: Container(child: MapPage(points: points, zoom: zoom)),
+        body: Container(child: MapPage(marks: marks, zoom: zoom)),
         floatingActionButton: Container(
             alignment: Alignment.topRight,
             padding: EdgeInsets.only(top: 20, right: 20, left: 20),
             child: Row(
               children: [
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        searchFile();
-                        // final result = await FilePicker.platform.pickFiles();
-                        points.addAll([
-                          [23.13256, -82.36062],
-                          [23.13102, -82.36181]
-                        ]);
-                      });
-                    },
-                    child: Icon(Icons.add)),
-                SizedBox(width: 20),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        zoom += 0.5;
-                        // if (points.isNotEmpty){
-                        //   points.removeLast();
-                        // }
-                      });
-                    },
-                    child: Icon(Icons.zoom_in)),
-                SizedBox(width: 8),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        if (zoom <= 1) {
-                          zoom = 1;
-                        } else {
-                          zoom -= 0.5;
-                        }
-                      });
-                    },
-                    child: Icon(Icons.zoom_out)),
+                addMarks(),
+                const SizedBox(width: 20),
+                zoomPlus(),
+                const SizedBox(width: 8),
+                zoomMinus(),
               ],
             )));
   }
@@ -95,15 +124,16 @@ class MapPage extends StatelessWidget {
   late List<Marker> markers = <Marker>[];
   late double zoom;
 
-  MapPage({required List<List<double>> points, required double zoom, Key? key})
+  MapPage({required List<Map> marks, required double zoom, Key? key})
       : super(key: key) {
-    for (var point in points) {
+    for (var mark in marks) {
+      List<double> position = mark['position'];
       markers.add(Marker(
           width: 80.0,
           height: 80.0,
-          point: LatLng(point[0], point[1]),
+          point: LatLng(position[0], position[1]),
           builder: (ctx) => Container(
-                child: Icon(Icons.location_on, color: Colors.redAccent),
+                child: Icon(Icons.location_on, color: PotholeColor.primary),
               )));
     }
     this.zoom = zoom;
@@ -116,7 +146,9 @@ class MapPage extends StatelessWidget {
     return FlutterMap(
       key: UniqueKey(),
       options: MapOptions(
-        center: LatLng(23.13329, -82.36698),
+        center:
+            // markers.isEmpty ? LatLng(23.13329, -82.36698) : markers[0].point,
+            LatLng(23.13329, -82.36698),
         zoom: zoom,
       ),
       layers: [

@@ -60,8 +60,10 @@ class JData {
       String dataPath, Position position, String label) async {
     final File jsonFile = File('$dataPath/marks.json');
     final Map newMark = {
-      'latitude': position.latitude,
-      'longitude': position.longitude,
+      'position':{
+         'latitude': position.latitude,
+         'longitude': position.longitude
+      },
       'label': label,
     };
 
@@ -107,7 +109,7 @@ class JData {
   Future<void> deleteFile(String filename) async {
     File file = File(filename);
     if (file.existsSync()) {
-      print('BORRADO ARCHIVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
+      //print('BORRADO ARCHIVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
       await file.delete();
     }
   }

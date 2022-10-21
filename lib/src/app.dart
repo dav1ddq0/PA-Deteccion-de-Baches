@@ -1,22 +1,9 @@
-import 'dart:async';
+// ignore_for_file: prefer_const_constructors
 import 'package:deteccion_de_baches/src/themes/color.dart';
-import 'package:deteccion_de_baches/src/pages/stopwatch.dart';
-import 'package:deteccion_de_baches/src/themes/my_style.dart';
-import 'package:deteccion_de_baches/src/utils/accelerometer_data.dart';
-import 'package:deteccion_de_baches/src/utils/permissions.dart';
-import 'package:deteccion_de_baches/src/utils/saved_data.dart';
-import 'package:deteccion_de_baches/src/utils/signal_processing.dart';
-import 'package:deteccion_de_baches/src/utils/tools.dart';
 import 'package:flutter/material.dart';
-import 'package:deteccion_de_baches/src/recorder_button.dart';
 import 'package:deteccion_de_baches/src/pages/map.dart';
 import 'package:deteccion_de_baches/src/pages/home.dart';
-import 'package:deteccion_de_baches/src/pages/sensor.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 import 'package:deteccion_de_baches/src/themes/pothole_dark_theme.dart';
-import 'utils/gyroscope_data.dart';
-import 'utils/storage_utils.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -63,6 +50,7 @@ class _PotholeState extends State<PotholeApp>
             borderRadius: BorderRadius.circular(10),
             color: PotholeColor.tabBarIndicatorMainColor,
           ),
+          // ignore: prefer_const_literals_to_create_immutables
           tabs: <Widget>[
             Tab(icon: Icon(Icons.home, color: PotholeColor.primary)),
             Tab(icon: Icon(Icons.map, color: PotholeColor.primary))

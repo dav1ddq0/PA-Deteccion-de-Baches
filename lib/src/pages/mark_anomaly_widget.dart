@@ -1,18 +1,27 @@
+import 'package:deteccion_de_baches/src/themes/color.dart';
+import 'package:deteccion_de_baches/src/themes/my_style.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../utils/saved_data.dart';
 import '../utils/storage_utils.dart';
 
-class SaveDataDialog extends StatefulWidget {
-  SaveDataDialog({Key? key}) : super(key: key);
+class MarkAnomaly extends StatefulWidget {
+  final String mainDirectory;
+  final List<String> subdirectories;
+  final Position? position; // GPS location of the anomaly
+
+  const MarkAnomaly(
+      {Key? key,
+      required this.mainDirectory,
+      required this.subdirectories,
+      required this.position})
+      : super(key: key);
 
   @override
-  State<SaveDataDialog> createState() => _SaveDataDialogState();
+  State<MarkAnomaly> createState() => _MarkAnomalyState();
 }
 
-class _SaveDataDialogState extends State<SaveDataDialog> {
-  final String mainDirectory =
-      '/storage/emulated/0/Baches'; // path where json data is stored
-  final List<String> subdirectories = ['sensors', 'mark_labels', 'exported'];
+class _MarkAnomalyState extends State<MarkAnomaly> {
   late TextEditingController fileNameController;
   late JData collectedData;
 
@@ -34,25 +43,12 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
 
   SnackBar _emptyALabel() {
     const SnackBar _snackBar = SnackBar(
-      backgroundColor: Colors.black,
+      backgroundColor: PotholeColor.primary,
       duration: Duration(seconds: 2),
       content: Text('Please enter a label for the anomaly detected',
-          style: TextStyle(color: Colors.white)),
+          style:PotholeStyle.snackBarTextStyle),
       behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.only(left: 40.0, right: 40),
-    );
-    return _snackBar;
-  }
-
-  SnackBar _fileAlreadyExistsSB(String filename) {
-    SnackBar _snackBar = SnackBar(
-      backgroundColor: Colors.black,
-      duration: const Duration(seconds: 2),
-      content: Text(
-          "The file $filename.json already exists. Please choose another name",
-          style: TextStyle(color: Colors.white)),
-      behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.only(left: 40.0, right: 40),
+      margin: PotholeStyle.snackBarMargin,
     );
     return _snackBar;
   }
@@ -67,18 +63,12 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
           ScaffoldMessenger.of(context).showSnackBar(_emptyALabel());
         } else {
           String fullPath =
-              "$mainDirectory/${subdirectories[2]}/$filename.json";
-          makeAppFolders(mainDirectory, subdirectories);
+              "${widget.mainDirectory}/${widget.subdirectories[1]}";
+          makeAppFolders(widget.mainDirectory, widget.subdirectories);
           // Verify if exist a previous file with this name
-          if (myfileAlreadyExists(fullPath)) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(_fileAlreadyExistsSB(filename));
-          } else {
-            // Exported  file to the exported folder
-            collectedData.exportRecordData(
-                '$mainDirectory/${subdirectories[2]}',
-                filename,
-                '$mainDirectory/${subdirectories[0]}');
+          String label = fileNameController.text.toLowerCase();
+          if (widget.position != null) {
+            collectedData.saveMarksToJson(fullPath, widget.position as Position, label);
           }
         }
 
@@ -94,7 +84,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
         controller: fileNameController,
         decoration: const InputDecoration(
             border: OutlineInputBorder(),
-            hintText: 'Choose a name for this anomaly',
+            hintText: 'anomaly label',
             prefixIcon: Icon(Icons.label)),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -110,7 +100,13 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-        child: const Text('Mark anomaly'),
+        child: const Text('Mark anomaly', style: TextStyle(color: PotholeColor.darkText),),
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15),
+            textStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
         onPressed: () {
           showDialog(
               context: context,
