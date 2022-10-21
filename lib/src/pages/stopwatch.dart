@@ -11,7 +11,7 @@ String formatTime(int milliseconds) {
 }
 
 class MyStopwatchWidget extends StatefulWidget {
-  MyStopwatchWidget({Key? key}) : super(key: key);
+  const MyStopwatchWidget({Key? key}) : super(key: key);
 
   
   @override
@@ -26,7 +26,7 @@ class _MyStopwatchWidgetState extends State<MyStopwatchWidget> {
   void initState() {
     super.initState();
     _stopwatch = Stopwatch();
-    _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
+    _timer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       setState(() {});
     });
   }
@@ -52,7 +52,7 @@ class _MyStopwatchWidgetState extends State<MyStopwatchWidget> {
   
   @override
   Widget build(BuildContext context) {
-    return Text(formatTime(_stopwatch.elapsedMilliseconds), style: TextStyle(fontSize:25.0));
+    return Text(formatTime(_stopwatch.elapsedMilliseconds), style: const TextStyle(fontSize:25.0));
             
         
       

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import '../utils/permissions.dart';
 import '../utils/saved_data.dart';
 import '../utils/storage_utils.dart';
 
@@ -50,8 +48,9 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
     SnackBar _snackBar = SnackBar(
       backgroundColor: Colors.black,
       duration: const Duration(seconds: 2),
-      content:
-          Text("The file $filename.json already exists. Please choose another name", style: TextStyle(color: Colors.white)),
+      content: Text(
+          "The file $filename.json already exists. Please choose another name",
+          style: TextStyle(color: Colors.white)),
       behavior: SnackBarBehavior.floating,
       margin: EdgeInsets.only(left: 40.0, right: 40),
     );
@@ -67,7 +66,8 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
         if (filename == null || filename == "") {
           ScaffoldMessenger.of(context).showSnackBar(_emptyALabel());
         } else {
-          String fullPath = "$mainDirectory/${subdirectories[2]}/$filename.json";
+          String fullPath =
+              "$mainDirectory/${subdirectories[2]}/$filename.json";
           makeAppFolders(mainDirectory, subdirectories);
           // Verify if exist a previous file with this name
           if (myfileAlreadyExists(fullPath)) {

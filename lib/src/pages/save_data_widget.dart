@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
-
+import 'package:deteccion_de_baches/src/themes/my_style.dart';
+import 'package:deteccion_de_baches/src/themes/color.dart';
 import '../utils/permissions.dart';
 import '../utils/saved_data.dart';
 import '../utils/storage_utils.dart';
 
 class SaveDataDialog extends StatefulWidget {
-  SaveDataDialog({Key? key}) : super(key: key);
+  final int time;
+  final bool scanning;
+  final String mainDirectory;
+  final List<String> subdirectories;
+  const SaveDataDialog(
+      {required this.time,
+      required this.scanning,
+      Key? key,
+      required this.mainDirectory,
+      required this.subdirectories})
+      : super(key: key);
 
   @override
   State<SaveDataDialog> createState() => _SaveDataDialogState();
 }
 
 class _SaveDataDialogState extends State<SaveDataDialog> {
-  final String mainDirectory =
-      '/storage/emulated/0/Baches'; // path where json data is stored
-  final List<String> subdirectories = ['sensors', 'mark_labels', 'exported'];
   late TextEditingController fileNameController;
   late JData collectedData;
 
@@ -36,12 +44,12 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
 
   SnackBar _emptyRecordNameSB() {
     const SnackBar _snackBar = SnackBar(
-      backgroundColor: Colors.black,
+      backgroundColor: PotholeColor.primary,
       duration: Duration(seconds: 2),
       content: Text('Please enter a record name',
-          style: TextStyle(color: Colors.white)),
+          style: TextStyle(color: PotholeColor.darkText)),
       behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.only(left: 40.0, right: 40),
+      margin: PotholeStyle.snackBarMargin,
     );
     return _snackBar;
   }
@@ -50,10 +58,24 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
     SnackBar _snackBar = SnackBar(
       backgroundColor: Colors.black,
       duration: const Duration(seconds: 2),
-      content:
-          Text("The file $filename.json already exists. Please choose another name", style: TextStyle(color: Colors.white)),
+      content: Text(
+          "The file $filename.json already exists. Please choose another name",
+          style: TextStyle(color: Colors.white)),
       behavior: SnackBarBehavior.floating,
-      margin: EdgeInsets.only(left: 40.0, right: 40),
+      margin: PotholeStyle.snackBarMargin,
+    );
+    return _snackBar;
+  }
+
+  SnackBar _stillScanning() {
+     SnackBar _snackBar = SnackBar(
+      backgroundColor: PotholeColor.primary,
+      duration: const Duration(seconds: 2),
+      content: Text(
+          "it is still scanning scanning. Please stop scanning first.",
+          style: TextStyle(color: Colors.white)),
+      behavior: SnackBarBehavior.floating,
+      margin: PotholeStyle.snackBarMargin,
     );
     return _snackBar;
   }
@@ -67,8 +89,9 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
         if (filename == null || filename == "") {
           ScaffoldMessenger.of(context).showSnackBar(_emptyRecordNameSB());
         } else {
-          String fullPath = "$mainDirectory/${subdirectories[2]}/$filename.json";
-          makeAppFolders(mainDirectory, subdirectories);
+          String fullPath =
+              "${widget.mainDirectory}/${widget.subdirectories[2]}/$filename.json";
+          makeAppFolders(widget.mainDirectory, widget.subdirectories);
           // Verify if exist a previous file with this name
           if (myfileAlreadyExists(fullPath)) {
             ScaffoldMessenger.of(context)
@@ -76,9 +99,9 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
           } else {
             // Exported  file to the exported folder
             collectedData.exportRecordData(
-                '$mainDirectory/${subdirectories[2]}',
+                '${widget.mainDirectory}/${widget.subdirectories[2]}',
                 filename,
-                '$mainDirectory/${subdirectories[0]}');
+                '${widget.mainDirectory}/${widget.subdirectories[0]}');
           }
         }
 
@@ -93,6 +116,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
       content: TextFormField(
         controller: fileNameController,
         decoration: const InputDecoration(
+            iconColor: PotholeColor.primary,
             border: OutlineInputBorder(),
             hintText: 'Choose a name for this record',
             prefixIcon: Icon(Icons.file_copy)),
@@ -110,13 +134,24 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-        child: const Text('Save data as'),
+        child: const Text('Save record as', style: TextStyle(color: PotholeColor.darkText)),
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15),
+            textStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
         onPressed: () {
-          showDialog(
-              context: context,
-              builder: (context) {
-                return exportRecordDialog();
-              });
+          if (widget.scanning) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(_stillScanning());
+          } else {
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return exportRecordDialog();
+                });
+          }
         });
   }
 }

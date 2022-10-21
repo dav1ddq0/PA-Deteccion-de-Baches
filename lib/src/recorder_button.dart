@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:deteccion_de_baches/src/themes/color.dart';
 import 'package:flutter/material.dart';
 
 String formatTime(int milliseconds) {
@@ -27,12 +28,11 @@ class _RecorderButtonState extends State<RecorderButton> {
   late Timer _timer;
   late Stopwatch _stopwatch;
 
-
   @override
   void initState() {
     super.initState();
     _stopwatch = Stopwatch();
-    _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
+    _timer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
       setState(() {});
     });
   }
@@ -57,27 +57,26 @@ class _RecorderButtonState extends State<RecorderButton> {
   @override
   Widget build(BuildContext context) {
     return Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-      SizedBox(width: 10),
-      Container(
-        margin: EdgeInsets.all(8),
-        child: ElevatedButton(
-          onPressed: () {
-            handleStartStop();
-            setState(() {
-              pressed = !pressed;
-              widget.callback(pressed);
-            });
-          },
-          child: Text(pressed ? stopText : playText),
-          style: ElevatedButton.styleFrom(
-              shape: StadiumBorder(),
-              padding: EdgeInsets.all(15),
-              textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-        ),
-
-        // StopwatchContainerW(scanning: scanning, milliseconds: 1000)
+      ElevatedButton(
+        onPressed: () {
+          handleStartStop();
+          setState(() {
+            pressed = !pressed;
+            widget.callback(pressed);
+          });
+        },
+        child: Text(pressed ? stopText : playText, style: TextStyle(color:  PotholeColor.darkText)),
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15),
+            textStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
       ),
-      SizedBox(width: 20),
+
+      // StopwatchContainerW(scanning: scanning, milliseconds: 1000)
+
+      const SizedBox(width: 20),
       pressed
           ? StopwatchButton(milliseconds: _stopwatch.elapsedMilliseconds)
           : const SizedBox(width: 0)
@@ -94,10 +93,13 @@ class StopwatchButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return (ElevatedButton(
         onPressed: () {},
-        child: Text(formatTime(milliseconds), style: TextStyle(fontSize: 18.0)),
+        child: Text(formatTime(milliseconds),
+            style: const TextStyle(fontSize: 18.0,color: PotholeColor.darkText)),
         style: ElevatedButton.styleFrom(
-            shape: StadiumBorder(),
-            padding: EdgeInsets.all(15),
-            textStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.bold))));
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15),
+            textStyle:
+                const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))));
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:deteccion_de_baches/src/recorder_button.dart';
 import 'package:deteccion_de_baches/src/pages/stopwatch.dart';
 import 'package:deteccion_de_baches/src/pages/save_data_widget.dart';
-
+import 'package:deteccion_de_baches/src/themes/color.dart';
 import 'dart:async';
 
 import 'package:deteccion_de_baches/src/pages/stopwatch.dart';
@@ -62,6 +62,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     fileNameController = TextEditingController();
     scanning = false;
     collectedData = JData();
+    milliseconds = 0;
     // _stopwatch = Stopwatch();
     // _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
     //   setState(() {});
@@ -413,8 +414,19 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   Widget recorderRowButton() {
     return Container(
         margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         child: RecorderButton(callback: callbackRecorder));
+  }
+
+  Widget saveData(){
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
+      child: Row(children:[
+        SaveDataDialog(time: milliseconds, scanning: scanning, mainDirectory: mainDirectory, subdirectories: subdirectories),
+        const SizedBox(width: 20),
+        ]),
+    );
   }
 
   @override
@@ -423,12 +435,13 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       body: SingleChildScrollView(
           child: Column(children: [
             recorderRowButton(),
-        SensorName(),
+            saveData(),
+        const SensorName(),
         speedWidget(),
         gpsWidget(),
         acceWidget(),
         gyroWidget(),
-        SaveDataDialog(),
+        
       ])),
     );
   }
@@ -443,7 +456,7 @@ class SensorName extends StatelessWidget {
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(10),
       child: Text("Sensors:",
-          style: TextStyle(fontSize: 40, color: Colors.blue[200])),
+          style: TextStyle(fontSize: 40, color: PotholeColor.primary)),
     );
   }
 }
@@ -468,9 +481,9 @@ class GPSSensor extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Icon(Icons.location_on, color: Colors.blue[200], size: 37),
+                Icon(Icons.location_on, color: PotholeColor.primary, size: 37),
                 Text("GPS:",
-                    style: TextStyle(color: Colors.blue[200], fontSize: 18)),
+                    style: TextStyle(color: PotholeColor.primary, fontSize: 18)),
               ],
             ),
             LatLngRowWidget(name: "Lat", value: latitude),
@@ -491,13 +504,13 @@ class SpeedSensor extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       child: Row(
         children: [
-          Icon(Icons.speed_rounded, color: Colors.blue[200], size: 37),
+          Icon(Icons.speed_rounded, color: PotholeColor.primary, size: 37),
           const SizedBox(width: 8),
           Text("Speed:",
-              style: TextStyle(color: Colors.blue[200], fontSize: 18)),
+              style: TextStyle(color: PotholeColor.primary, fontSize: 18)),
           const SizedBox(width: 8),
           Text("$speed  km/h",
-              style: TextStyle(color: Colors.blue[200], fontSize: 18))
+              style: TextStyle(color: PotholeColor.primary, fontSize: 18))
         ],
       ),
     );
@@ -526,10 +539,10 @@ class GyroscopeSensor extends StatelessWidget {
           children: [
             Row(children: [
               Icon(Icons.rotate_left_rounded,
-                  color: Colors.blue[200], size: 37),
+                  color: PotholeColor.primary, size: 37),
               Text(
                 "Gyroscope: ",
-                style: TextStyle(color: Colors.blue[200], fontSize: 18),
+                style: TextStyle(color: PotholeColor.primary, fontSize: 18),
               )
             ]),
             Column(
@@ -566,10 +579,10 @@ class AccelerometerSensor extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(Icons.directions_run, color: Colors.blue[200], size: 37),
+              Icon(Icons.directions_run, color: PotholeColor.primary, size: 37),
               Text(
                 "Accelerometer: ",
-                style: TextStyle(color: Colors.blue[200], fontSize: 18),
+                style: TextStyle(color: PotholeColor.primary, fontSize: 18),
               )
             ]),
             Column(
@@ -582,12 +595,13 @@ class AccelerometerSensor extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () {},
-              child: const Icon(Icons.graphic_eq),
+              child: const Icon(Icons.graphic_eq, color: PotholeColor.darkText),
               style: ElevatedButton.styleFrom(
+                  primary: PotholeColor.primary,
                   shape: const CircleBorder(),
                   padding: const EdgeInsets.all(8),
                   textStyle: const TextStyle(
-                      fontSize: 10, fontWeight: FontWeight.bold)),
+                      fontSize: 10, fontWeight: FontWeight.bold, color: PotholeColor.darkText)),
             )
           ],
         ));
@@ -606,12 +620,12 @@ class LatLngRowWidget extends StatelessWidget {
       children: [
         Text(
           "$name:",
-          style: TextStyle(color: Colors.blue[200], fontSize: 20),
+          style: TextStyle(color: PotholeColor.primary, fontSize: 20),
         ),
         const SizedBox(width: 8),
         Text(
           value.toString(),
-          style: TextStyle(color: Colors.blue[200], fontSize: 20),
+          style: TextStyle(color: PotholeColor.primary, fontSize: 20),
         )
       ],
     );
@@ -631,11 +645,11 @@ class AxisRowWidget extends StatelessWidget {
       child: Row(children: [
         Text(
           axisTag,
-          style: TextStyle(fontSize: 18, color: Colors.blue[200]),
+          style: TextStyle(fontSize: 18, color: PotholeColor.primary),
         ),
         const SizedBox(width: 8),
         Text(lecture.toString(),
-            style: TextStyle(fontSize: 18, color: Colors.blue[200]))
+            style: TextStyle(fontSize: 18, color: PotholeColor.primary))
       ]),
     );
   }
