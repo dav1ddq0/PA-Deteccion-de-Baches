@@ -39,9 +39,9 @@ class _GPSSensorState extends State<GPSSensor> {
                 Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children:[                  
-                LatLngRowW(name: "Lat", value: widget.latitude),
+                LatLngRowWidget(name: "Lat", value: widget.latitude),
                 SizedBox(width:40),
-                LatLngRowW(name: "Lng", value: widget.longitude)
+                LatLngRowWidget(name: "Lng", value: widget.longitude)
                 ],
                   )
                  
@@ -58,10 +58,10 @@ class _GPSSensorState extends State<GPSSensor> {
   }
 }
 
-class LatLngRowW extends StatelessWidget {
+class LatLngRowWidget extends StatelessWidget {
   final String name;
   final String value;
-  const LatLngRowW({required this.name, required this.value, Key? key}) : super(key: key);
+  const LatLngRowWidget({required this.name, required this.value, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

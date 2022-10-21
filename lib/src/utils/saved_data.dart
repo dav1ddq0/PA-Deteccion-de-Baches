@@ -56,25 +56,23 @@ class JData {
     }
   }
 
-  Future<File> saveMarksToJson(String dataPath, Position position) async {
+  Future<File> saveMarksToJson(
+      String dataPath, Position position, String label) async {
     final File jsonFile = File('$dataPath/marks.json');
+    final Map newMark = {
+      'latitude': position.latitude,
+      'longitude': position.longitude,
+      'label': label,
+    };
 
     if (jsonFile.existsSync()) {
       Map<String, dynamic> jsonFileContent =
           json.decode(jsonFile.readAsStringSync());
-      jsonFileContent['marks']?.add({
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-      });
+      jsonFileContent['marks']?.add(newMark);
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
       return jsonFile;
     } else {
-      List<dynamic> mark = [
-        {
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        }
-      ];
+      List<dynamic> mark = [newMark,];
       final Map<String, List<dynamic>> data = {'marks': mark};
       jsonFile.writeAsStringSync(json.encode(data));
       return jsonFile;
@@ -83,7 +81,7 @@ class JData {
 
   Future<void> exportRecordData(
       String dataPath, String filename, String tempFilePath) async {
-    final File jsonFile = File('$tempFilePath/bumps.json');
+    final File jsonFile = File('$tempFilePath/record.json');
     if (jsonFile.existsSync()) {
       List<dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
       saveRecordToJson(dataPath, jsonFileContent, filename: filename);

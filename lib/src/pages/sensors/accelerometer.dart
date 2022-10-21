@@ -38,9 +38,9 @@ class _AccelerometerSensorState extends State<AccelerometerSensor> {
             Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                AccAxisRowWidget(axisTag: "X Axis:", lecture: widget.x),
-                AccAxisRowWidget(axisTag: "Y Axis:", lecture: widget.y),
-                AccAxisRowWidget(axisTag: "Z Axis:", lecture: widget.z),
+                AxisRowWidget(axisTag: "X Axis:", lecture: widget.x),
+                AxisRowWidget(axisTag: "Y Axis:", lecture: widget.y),
+                AxisRowWidget(axisTag: "Z Axis:", lecture: widget.z),
               ],
             ),
             ElevatedButton(
@@ -61,10 +61,10 @@ class _AccelerometerSensorState extends State<AccelerometerSensor> {
   }
 }
 
-class AccAxisRowWidget extends StatelessWidget {
+class AxisRowWidget extends StatelessWidget {
   final String axisTag;
   final String lecture;
-  AccAxisRowWidget({
+  const AxisRowWidget({
     required this.axisTag, 
     required this.lecture, 
     Key? key}): super(key: key); 
