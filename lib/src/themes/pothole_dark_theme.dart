@@ -13,6 +13,11 @@ final myThemeDark = ThemeData(
   scaffoldBackgroundColor: Color.fromARGB(255, 44, 47, 53),
   dialogBackgroundColor: Color(0xff121212),
   focusColor: PotholeColor.primary,
-  accentColor: PotholeColor.primary,
-  buttonColor:  PotholeColor.primary,
+  inputDecorationTheme: const InputDecorationTheme(
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(width: 3, color: PotholeColor.primary),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(width: 3, color:PotholeColor.primary),
+      ),),
 );

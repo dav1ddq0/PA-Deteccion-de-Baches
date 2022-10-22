@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:deteccion_de_baches/src/themes/my_style.dart';
 import 'package:deteccion_de_baches/src/themes/color.dart';
+import 'package:deteccion_de_baches/src/pages/pothole_snackbar.dart';
 import '../utils/permissions.dart';
 import '../utils/saved_data.dart';
 import '../utils/storage_utils.dart';
@@ -35,8 +36,10 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
 
   Widget cancelRButton() {
     return TextButton.icon(
-        label: const Text("Cancel", style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.cancel, color: Colors.red),
+        style: PotholeStyle.actionButtonDialogStyle,
+        label: const Text("Cancel",
+            style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.cancel, color: PotholeColor.primary),
         onPressed: () {
           Navigator.pop(context);
         });
@@ -55,35 +58,25 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
   }
 
   SnackBar _fileAlreadyExistsSB(String filename) {
-    SnackBar _snackBar = SnackBar(
-      backgroundColor: Colors.black,
-      duration: const Duration(seconds: 2),
-      content: Text(
-          "The file $filename.json already exists. Please choose another name",
-          style: TextStyle(color: Colors.white)),
-      behavior: SnackBarBehavior.floating,
-      margin: PotholeStyle.snackBarMargin,
-    );
+    SnackBar _snackBar = primaryPotholeSnackBar("The file $filename.json already exists. Please choose another name");
     return _snackBar;
   }
 
   SnackBar _stillScanning() {
-     SnackBar _snackBar = SnackBar(
-      backgroundColor: PotholeColor.primary,
-      duration: const Duration(seconds: 2),
-      content: Text(
-          "it is still scanning scanning. Please stop scanning first.",
-          style: TextStyle(color: Colors.white)),
-      behavior: SnackBarBehavior.floating,
-      margin: PotholeStyle.snackBarMargin,
-    );
+    SnackBar _snackBar = primaryPotholeSnackBar(
+        "it is still scanning scanning. Please stop scanning first.");
     return _snackBar;
   }
 
   Widget saveRButton() {
     return TextButton.icon(
-      icon: const Icon(Icons.check, color: Colors.green),
-      label: const Text("Save Record", style: TextStyle(color: Colors.white)),
+      style: PotholeStyle.actionButtonDialogStyle,
+      icon: const Icon(Icons.check, color: PotholeColor.primary),
+      label: const Text("Save Record",
+          style: TextStyle(color: Colors.white)),
+      // style: ButtonStyle(
+      //   foregroundColor: MaterialStateProperty PotholeColor.primary
+      // ),
       onPressed: () {
         String filename = fileNameController.text;
         if (filename == null || filename == "") {
@@ -112,14 +105,26 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
 
   Widget exportRecordDialog() {
     return AlertDialog(
-      title: const Text('Save record'),
+      title: const Text(
+        'Save record',
+        style: TextStyle(color: PotholeColor.primary)
+      ),
+      backgroundColor: PotholeColor.darkText,
       content: TextFormField(
+        cursorColor: PotholeColor.primary,
+           
+                   
         controller: fileNameController,
         decoration: const InputDecoration(
-            iconColor: PotholeColor.primary,
-            border: OutlineInputBorder(),
-            hintText: 'Choose a name for this record',
-            prefixIcon: Icon(Icons.file_copy)),
+          iconColor: PotholeColor.darkText,
+          border:  OutlineInputBorder(borderSide: BorderSide(width: 3, color: PotholeColor.primary)),
+          // enabledBorder: OutlineInputBorder(borderSide: BorderSide(width: 3, color: PotholeColor.primary)),
+          focusedBorder: OutlineInputBorder(borderSide: BorderSide(width: 3, color: PotholeColor.primary)),
+          hintText: 'Choose a name for this record',
+          hintStyle: TextStyle(color: Colors.white, fontSize: 10),
+          suffixIcon: Icon(Icons.file_copy,color: PotholeColor.primary)
+        ),
+        style: TextStyle(color: Colors.white),
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter a record name';
@@ -134,7 +139,8 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-        child: const Text('Save record as', style: TextStyle(color: PotholeColor.darkText)),
+        child: const Text('Save record as',
+            style: TextStyle(color: PotholeColor.darkText)),
         style: ElevatedButton.styleFrom(
             primary: PotholeColor.primary,
             shape: const StadiumBorder(),
@@ -143,8 +149,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
                 const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
         onPressed: () {
           if (widget.scanning) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(_stillScanning());
+            ScaffoldMessenger.of(context).showSnackBar(_stillScanning());
           } else {
             showDialog(
                 context: context,
