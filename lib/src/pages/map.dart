@@ -20,7 +20,7 @@ class MapTab extends StatefulWidget {
 
 
 class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
-  List<Map<dynamic,dynamic>> marks = [];
+  List<dynamic> marks = [];
   double zoom = 14.0;
 
   SnackBar _maxZoomReach() {
@@ -83,7 +83,7 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
             shape: const StadiumBorder(),
             padding: const EdgeInsets.all(15)),
         onPressed: () async {
-          List<Map<dynamic,dynamic>> jsonMarks = await loadMarks();
+          List<dynamic> jsonMarks = await loadMarks();
           setState(() {
              if (jsonMarks.isNotEmpty) {
               marks = jsonMarks;
@@ -124,14 +124,15 @@ class MapPage extends StatelessWidget {
   late List<Marker> markers = <Marker>[];
   late double zoom;
 
-  MapPage({required List<Map> marks, required double zoom, Key? key})
+  MapPage({required List<dynamic> marks, required double zoom, Key? key})
       : super(key: key) {
     for (var mark in marks) {
-      List<double> position = mark['position'];
+      print(mark);
+      dynamic position = mark['position'];
       markers.add(Marker(
           width: 80.0,
           height: 80.0,
-          point: LatLng(position[0], position[1]),
+          point: LatLng(position['latitude'], position['longitude']),
           builder: (ctx) => Container(
                 child: Icon(Icons.location_on, color: PotholeColor.primary),
               )));
@@ -147,8 +148,8 @@ class MapPage extends StatelessWidget {
       key: UniqueKey(),
       options: MapOptions(
         center:
-            // markers.isEmpty ? LatLng(23.13329, -82.36698) : markers[0].point,
-            LatLng(23.13329, -82.36698),
+            markers.isEmpty ? LatLng(23.13329, -82.36698) : markers[0].point,
+            //LatLng(23.13329, -82.36698),
         zoom: zoom,
       ),
       layers: [

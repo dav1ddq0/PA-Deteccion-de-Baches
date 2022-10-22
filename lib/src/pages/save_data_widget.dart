@@ -107,7 +107,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
     return AlertDialog(
       title: const Text(
         'Save record',
-        style: TextStyle(color: PotholeColor.primary)
+        style: TextStyle(color: Colors.white)
       ),
       backgroundColor: PotholeColor.darkText,
       content: TextFormField(
@@ -121,7 +121,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
           // enabledBorder: OutlineInputBorder(borderSide: BorderSide(width: 3, color: PotholeColor.primary)),
           focusedBorder: OutlineInputBorder(borderSide: BorderSide(width: 3, color: PotholeColor.primary)),
           hintText: 'Choose a name for this record',
-          hintStyle: TextStyle(color: Colors.white, fontSize: 10),
+          hintStyle: TextStyle(fontSize: 12),
           suffixIcon: Icon(Icons.file_copy,color: PotholeColor.primary)
         ),
         style: TextStyle(color: Colors.white),

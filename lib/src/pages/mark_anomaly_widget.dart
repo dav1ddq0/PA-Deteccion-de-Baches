@@ -34,8 +34,9 @@ class _MarkAnomalyState extends State<MarkAnomaly> {
 
   Widget cancelAButton() {
     return TextButton.icon(
+        style: PotholeStyle.actionButtonDialogStyle,
         label: const Text("Cancel", style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.cancel, color: Colors.red),
+        icon: const Icon(Icons.cancel, color: PotholeColor.primary),
         onPressed: () {
           Navigator.pop(context);
         });
@@ -55,7 +56,8 @@ class _MarkAnomalyState extends State<MarkAnomaly> {
 
   Widget markAButton() {
     return TextButton.icon(
-      icon: const Icon(Icons.check, color: Colors.green),
+      style:PotholeStyle.actionButtonDialogStyle,
+      icon: const Icon(Icons.check, color: PotholeColor.primary),
       label: const Text("Mark anomaly", style: TextStyle(color: Colors.white)),
       onPressed: () {
         String filename = fileNameController.text;
@@ -85,7 +87,8 @@ class _MarkAnomalyState extends State<MarkAnomaly> {
         decoration: const InputDecoration(
             border: OutlineInputBorder(),
             hintText: 'anomaly label',
-            prefixIcon: Icon(Icons.label)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(width: 3, color: PotholeColor.primary)),
+            suffixIcon: Icon(Icons.label, color: PotholeColor.primary,)),
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter a label name for the anomaly detected';

@@ -50,14 +50,14 @@ Future<PlatformFile?> pickFile() async {
   }
 }
 
-Future<List<Map>> loadMarks() async {
+Future<List<dynamic>> loadMarks() async {
   PlatformFile? file = await pickFile();
 
   if (file != null) {
     File jsonMarks = File(file.path as String);
     if (jsonMarks.existsSync()) {
-      List<Map<dynamic,dynamic>> jsonFileContent =
-          json.decode(jsonMarks.readAsStringSync());
+      List<dynamic> jsonFileContent =
+          json.decode(jsonMarks.readAsStringSync())['marks'] ;
       return jsonFileContent;
     }
     else{
