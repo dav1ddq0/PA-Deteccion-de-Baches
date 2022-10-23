@@ -30,28 +30,33 @@ bool myfileAlreadyExists(filename) {
 
 Future<PlatformFile?> pickFile() async {
   FilePickerResult? result = await FilePicker.platform.pickFiles(
-    type: FileType.custom,
-    allowedExtensions: ['json'],
+    type: FileType.any,
+    //allowedExtensions: ['json'],
   );
 
   if (result != null) {
-    //File file = File(result.files.single.path.toString());
+    // File file = File(result.files.single.path.toString());
+    // print(result.files.single.path.toString());
     PlatformFile file = result.files.first;
 
-    print(file.name);
-    print(file.bytes);
-    print(file.size);
-    print(file.extension);
-    print(file.path);
+    // print(file.name);
+    // print(file.bytes);
+    // print(file.size);
+    // print(file.extension);
+    // print(file.path);
     return file;
+    // if (file.extension != 'json'){
+    //   return null;
+    // }
+    // else{return file;}
   } else {
     return null;
     // User canceled the picker
   }
 }
 
-Future<List<dynamic>> loadMarks() async {
-  PlatformFile? file = await pickFile();
+Future<List<dynamic>> loadMarks(PlatformFile? file) async {
+  // PlatformFile? file = await pickFile();
 
   if (file != null) {
     File jsonMarks = File(file.path as String);

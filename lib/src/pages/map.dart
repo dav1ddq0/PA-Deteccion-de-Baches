@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:deteccion_de_baches/src/themes/color.dart';
@@ -16,8 +17,6 @@ class MapTab extends StatefulWidget {
   @override
   State<MapTab> createState() => _MapTabState();
 }
-
-
 
 class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
   List<dynamic> marks = [];
@@ -83,17 +82,20 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
             shape: const StadiumBorder(),
             padding: const EdgeInsets.all(15)),
         onPressed: () async {
-          List<dynamic> jsonMarks = await loadMarks();
-          setState(() {
-             if (jsonMarks.isNotEmpty) {
-              marks = jsonMarks;
-             }
-            // final result = await FilePicker.platform.pickFiles();
-            // marks.add({
-            //   'position': [23.13256, -82.36062],
-            //   'label': "prueba"
-            // });
-          });
+          PlatformFile? file = await pickFile();
+          if (file != null) {
+            if (file.extension != 'json') {
+              ScaffoldMessenger.of(context).showSnackBar(primaryPotholeSnackBar(
+                  "Invalid file. A JSON file is required."));
+            } else {
+              List<dynamic> jsonMarks = await loadMarks(file);
+              setState(() {
+                if (jsonMarks.isNotEmpty) {
+                  marks = jsonMarks;
+                }
+              });
+            }
+          }
         },
         child: Icon(Icons.add, color: PotholeColor.darkText));
   }
@@ -127,7 +129,7 @@ class MapPage extends StatelessWidget {
   MapPage({required List<dynamic> marks, required double zoom, Key? key})
       : super(key: key) {
     for (var mark in marks) {
-      print(mark);
+      // print(mark);
       dynamic position = mark['position'];
       markers.add(Marker(
           width: 80.0,
@@ -149,7 +151,7 @@ class MapPage extends StatelessWidget {
       options: MapOptions(
         center:
             markers.isEmpty ? LatLng(23.13329, -82.36698) : markers[0].point,
-            //LatLng(23.13329, -82.36698),
+        //LatLng(23.13329, -82.36698),
         zoom: zoom,
       ),
       layers: [

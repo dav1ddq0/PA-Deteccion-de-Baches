@@ -52,6 +52,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   late GyroscopeEvent gyroEvent;
   late AccelerometerEvent accelEvent;
   late JData collectedData;
+  String recordLabel = "normal";
   bool bumpDetected = false;
 
   @override
@@ -116,7 +117,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
             'longitude': currentPosition!.longitude
           },
           'speed': currentSpeed,
-          'sampling': accelReadIntervals
+          'sampling': accelReadIntervals,
+          'label':recordLabel,
         });
 
         /* accelRead */
