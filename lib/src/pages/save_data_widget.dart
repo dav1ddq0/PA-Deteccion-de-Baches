@@ -34,17 +34,6 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
     collectedData = JData();
   }
 
-  Widget cancelRButton() {
-    return TextButton.icon(
-        style: PotholeStyle.actionButtonDialogStyle,
-        label: const Text("Cancel",
-            style: TextStyle(color: Colors.white)),
-        icon: const Icon(Icons.cancel, color: PotholeColor.primary),
-        onPressed: () {
-          Navigator.pop(context);
-        });
-  }
-
   SnackBar _emptyRecordNameSB() {
     const SnackBar _snackBar = SnackBar(
       backgroundColor: PotholeColor.primary,
@@ -64,8 +53,20 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
 
   SnackBar _stillScanning() {
     SnackBar _snackBar = primaryPotholeSnackBar(
-        "it is still scanning scanning. Please stop scanning first.");
+        "it is still scanning . Please stop scanning first.");
     return _snackBar;
+  }
+
+
+  Widget cancelRButton() {
+    return TextButton.icon(
+        style: PotholeStyle.actionButtonDialogStyle,
+        label: const Text("Cancel",
+            style: TextStyle(color: Colors.white)),
+        icon: const Icon(Icons.cancel, color: PotholeColor.primary),
+        onPressed: () {
+          Navigator.pop(context);
+        });
   }
 
   Widget saveRButton() {
@@ -90,6 +91,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
             ScaffoldMessenger.of(context)
                 .showSnackBar(_fileAlreadyExistsSB(filename));
           } else {
+            print("Salvo aqui");
             // Exported  file to the exported folder
             collectedData.exportRecordData(
                 '${widget.mainDirectory}/${widget.subdirectories[2]}',

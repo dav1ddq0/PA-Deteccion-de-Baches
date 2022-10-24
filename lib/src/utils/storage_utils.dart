@@ -56,19 +56,32 @@ Future<PlatformFile?> pickFile() async {
 }
 
 Future<List<dynamic>> loadMarks(PlatformFile? file) async {
-  // PlatformFile? file = await pickFile();
-
   if (file != null) {
     File jsonMarks = File(file.path as String);
     if (jsonMarks.existsSync()) {
       List<dynamic> jsonFileContent =
-          json.decode(jsonMarks.readAsStringSync())['marks'] ;
+          json.decode(jsonMarks.readAsStringSync())['marks'];
       return jsonFileContent;
-    }
-    else{
+    } else {
       return [];
     }
   }
   return [];
 }
 
+Future<List<dynamic>> loadRecords(PlatformFile? file) async {
+  if (file != null) {
+    File jsonMarks = File(file.path as String);
+    if (jsonMarks.existsSync()) {
+      List<dynamic> jsonFileContent = json.decode(jsonMarks.readAsStringSync());
+      List<dynamic> marks = [];
+      for (var item in jsonFileContent) {
+        marks.add({'position': item['gps'], 'label': item['label']});
+      }
+      return marks;
+    } else {
+      return [];
+    }
+  }
+  return [];
+}

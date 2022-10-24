@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
@@ -42,7 +41,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   final List<Map<String, dynamic>> sensorData = [];
   final List<Position?> geoLoc = [];
   final List<double> speedRead = [];
-
+  final List<String> items = ["normal", "turn left", "turn right", "stop"];
+  String? selectedItem = "normal";
   Position? prevGeoLocSpeedComp;
 
   late Timer accelTimer;
@@ -118,7 +118,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
           },
           'speed': currentSpeed,
           'sampling': accelReadIntervals,
-          'label':recordLabel,
+          'label': selectedItem as String,
         });
 
         /* accelRead */
@@ -257,7 +257,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       geoLoc.clear();
       speedRead.clear();
     } else {
-      String fileName = '$mainDirectory/${subdirectories[0]}/bumps.json';
+      String fileName = '$mainDirectory/${subdirectories[0]}/record.json';
       await collectedData.deleteFile(fileName);
     }
     switchTimerAndEvents();
@@ -418,16 +418,53 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         child: RecorderButton(callback: callbackRecorder));
   }
 
-  Widget saveData(){
+  Widget saveData() {
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(10),
-      child: Row(children:[
-        SaveDataDialog(time: milliseconds, scanning: scanning, mainDirectory: mainDirectory, subdirectories: subdirectories),
+      child: Row(children: [
+        SaveDataDialog(
+            time: milliseconds,
+            scanning: scanning,
+            mainDirectory: mainDirectory,
+            subdirectories: subdirectories),
         const SizedBox(width: 20),
-        MarkAnomaly(mainDirectory: mainDirectory, subdirectories: subdirectories, position:  currentPosition)
-        ]),
+        MarkAnomaly(
+            mainDirectory: mainDirectory,
+            subdirectories: subdirectories,
+            position: currentPosition)
+      ]),
     );
+  }
+
+  Widget stateDrapdownButton(){
+    return SizedBox(
+      width: 300,
+      child:DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(width: 3, color: PotholeColor.primary)),
+                        iconColor: PotholeColor.primary),
+            value: selectedItem,
+            items: items
+                .map((item) => DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item, style: TextStyle(fontSize: 16, color: Colors.white))))
+                .toList(),
+            onChanged: (item) => setState(() {
+                  selectedItem = item;
+                })) ,
+    );
+  }
+
+  Widget specialEventsRow() {
+    return Container(
+        margin: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
+        child: stateDrapdownButton(),
+        );
   }
 
   @override
@@ -435,28 +472,29 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     return Scaffold(
       body: SingleChildScrollView(
           child: Column(children: [
-            recorderRowButton(),
-            saveData(),
+        recorderRowButton(),
+        saveData(),
+        const StateName(),
+        specialEventsRow(),
         const SensorName(),
         speedWidget(),
         gpsWidget(),
         acceWidget(),
         gyroWidget(),
-        
       ])),
     );
   }
 }
 
-class SensorName extends StatelessWidget {
-  const SensorName({Key? key}) : super(key: key);
+class StateName extends StatelessWidget {
+  const StateName({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(10),
-      child: Text("Sensors:",
+      child: Text("State:",
           style: TextStyle(fontSize: 40, color: PotholeColor.primary)),
     );
   }

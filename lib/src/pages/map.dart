@@ -20,6 +20,9 @@ class MapTab extends StatefulWidget {
 
 class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
   List<dynamic> marks = [];
+  List<String> items = ["Marks", "Records"];
+  String? selectedItem = "Marks";
+
   double zoom = 14.0;
 
   SnackBar _maxZoomReach() {
@@ -75,12 +78,11 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
         child: Icon(Icons.zoom_out, color: PotholeColor.darkText));
   }
 
-  Widget addMarks() {
-    return ElevatedButton(
-        style: ElevatedButton.styleFrom(
-            primary: PotholeColor.primary,
-            shape: const StadiumBorder(),
-            padding: const EdgeInsets.all(15)),
+  Widget okButton() {
+    return TextButton.icon(
+        style: PotholeStyle.actionButtonDialogStyle,
+        icon: const Icon(Icons.check, color: PotholeColor.primary),
+        label: const Text("OK", style: TextStyle(color: Colors.white)),
         onPressed: () async {
           PlatformFile? file = await pickFile();
           if (file != null) {
@@ -88,7 +90,13 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
               ScaffoldMessenger.of(context).showSnackBar(primaryPotholeSnackBar(
                   "Invalid file. A JSON file is required."));
             } else {
-              List<dynamic> jsonMarks = await loadMarks(file);
+              List<dynamic> jsonMarks = [];
+              if (selectedItem == "Marks") {
+                jsonMarks = await loadMarks(file);
+              } else {
+                jsonMarks = await loadRecords(file);
+              }
+
               setState(() {
                 if (jsonMarks.isNotEmpty) {
                   marks = jsonMarks;
@@ -96,6 +104,50 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
               });
             }
           }
+          Navigator.pop(context);
+        });
+  }
+
+  Widget dataSelectorDialog() {
+    return AlertDialog(
+        title:
+            const Text('Map Selector ', style: TextStyle(color: Colors.white)),
+        backgroundColor: PotholeColor.darkText,
+        content: SizedBox(
+            width: 200,
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(width: 3, color: PotholeColor.primary)),
+                  iconColor: PotholeColor.primary),
+              value: selectedItem,
+              items: items
+                  .map((item) => DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(item,
+                          style: TextStyle(fontSize: 16, color: Colors.white))))
+                  .toList(),
+              onChanged: (item) => setState(() {
+                selectedItem = item;
+              }),
+            )),
+        actions: <Widget>[okButton()]);
+  }
+
+  Widget addMarks() {
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15)),
+        onPressed: () async {
+          showDialog(
+              context: context,
+              builder: (context) {
+                return dataSelectorDialog();
+              });
         },
         child: Icon(Icons.add, color: PotholeColor.darkText));
   }
