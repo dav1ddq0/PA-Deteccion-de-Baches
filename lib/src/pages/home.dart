@@ -470,6 +470,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
   @override
   Widget build(BuildContext context) {
+    makeAppFolders(mainDirectory, subdirectories)
+        .then((value) => grantLocationPermission());
     return Scaffold(
       body: SingleChildScrollView(
           child: Column(children: [
@@ -492,6 +494,7 @@ class StateName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(10),

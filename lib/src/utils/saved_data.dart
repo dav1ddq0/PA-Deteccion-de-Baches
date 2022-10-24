@@ -135,14 +135,4 @@ class JData {
       await file.delete();
     }
   }
-
-  /* Future<File> get templocalFile async { */
-  /*   await createBumpFolder(); */
-  /*   // final path = await localPath; */
-  /*   final newfile = File('$dataPath/fif.txt'); */
-  /*   //Need copy some of info to test */
-  /*   newfile.writeAsString('Bumps....'); */
-
-  /*   return newfile; */
-  /* } */
 }
