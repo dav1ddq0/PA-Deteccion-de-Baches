@@ -11,6 +11,8 @@ String formatTime(int milliseconds) {
   return "$hours:$minutes:$seconds";
 }
 
+
+
 class RecorderButton extends StatefulWidget {
   final Function callback;
   const RecorderButton({required this.callback, Key? key}) : super(key: key);
@@ -59,10 +61,11 @@ class _RecorderButtonState extends State<RecorderButton> {
     return Row(mainAxisAlignment: MainAxisAlignment.start, children: [
       ElevatedButton(
         onPressed: () {
+          int milliseconds = _stopwatch.elapsedMilliseconds;
           handleStartStop();
           setState(() {
             pressed = !pressed;
-            widget.callback(pressed);
+            widget.callback(pressed, milliseconds);
           });
         },
         child: Text(pressed ? stopText : playText, style: TextStyle(color:  PotholeColor.darkText)),

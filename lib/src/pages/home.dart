@@ -25,7 +25,7 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   late bool scanning;
-  late int milliseconds;
+  late int time;
   late TextEditingController fileNameController;
   final String mainDirectory =
       '/storage/emulated/0/Baches'; // path where json data is stored
@@ -61,7 +61,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     fileNameController = TextEditingController();
     scanning = false;
     collectedData = JData();
-    milliseconds = 0;
+    time = 0;
     // _stopwatch = Stopwatch();
     // _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
     //   setState(() {});
@@ -307,16 +307,17 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   // late Timer _timer;
   // late Stopwatch _stopwatch;
 
-  callbackRecorder(nScanning) {
+  callbackRecorder(bool newScanning, int newTime) {
     setState(() {
-      scanning = nScanning;
+      scanning = newScanning;
+      time = newTime;
       switchScanning();
     });
   }
 
-  callbackStopwatch(crono) {
-    milliseconds = crono;
-  }
+  // callbackStopwatch(crono) {
+  //   milliseconds = crono;
+  // }
 
   // Widgets
 
@@ -424,7 +425,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       padding: const EdgeInsets.all(10),
       child: Row(children: [
         SaveDataDialog(
-            time: milliseconds,
+            time: time,
             scanning: scanning,
             mainDirectory: mainDirectory,
             subdirectories: subdirectories),

@@ -91,12 +91,11 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
             ScaffoldMessenger.of(context)
                 .showSnackBar(_fileAlreadyExistsSB(filename));
           } else {
-            print("Salvo aqui");
             // Exported  file to the exported folder
             collectedData.exportRecordData(
                 '${widget.mainDirectory}/${widget.subdirectories[2]}',
                 filename,
-                '${widget.mainDirectory}/${widget.subdirectories[0]}');
+                '${widget.mainDirectory}/${widget.subdirectories[0]}', widget.time);
           }
         }
 

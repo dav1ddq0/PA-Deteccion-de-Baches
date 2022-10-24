@@ -45,9 +45,6 @@ class JData {
     if (jsonFile.existsSync()) {
       List<dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
 
-      // for (int i = 0; i < data.length; i++) {
-      //   jsonFileContent.add(data[i]);
-      // }
       jsonFileContent.addAll(data);
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
       return jsonFile;
@@ -57,13 +54,35 @@ class JData {
     }
   }
 
+  Future<File> exportRecordToJson(
+      String dataPath, List<dynamic> data, String filename, int time) async {
+    print('$dataPath/$filename.json');
+    final File jsonFile = File('$dataPath/$filename.json');
+
+    if (jsonFile.existsSync()) {
+      Map<String,dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
+      
+      jsonFileContent['records'] = data;
+      jsonFileContent['time'] = time;
+      jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+
+      return jsonFile;
+    } else {
+      jsonFile.writeAsStringSync(json.encode({
+        'records': data,
+        'time': time
+      }));
+      return jsonFile;
+    }
+  }
+
   Future<File> saveMarksToJson(
       String dataPath, Position position, String label) async {
     final File jsonFile = File('$dataPath/marks.json');
     final Map newMark = {
-      'position':{
-         'latitude': position.latitude,
-         'longitude': position.longitude
+      'position': {
+        'latitude': position.latitude,
+        'longitude': position.longitude
       },
       'label': label,
     };
@@ -75,7 +94,9 @@ class JData {
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
       return jsonFile;
     } else {
-      List<dynamic> mark = [newMark,];
+      List<dynamic> mark = [
+        newMark,
+      ];
       final Map<String, List<dynamic>> data = {'marks': mark};
       jsonFile.writeAsStringSync(json.encode(data));
       return jsonFile;
@@ -83,14 +104,12 @@ class JData {
   }
 
   Future<void> exportRecordData(
-      String dataPath, String filename, String tempFilePath) async {
-    print(tempFilePath);
-    print(filename);
+      String dataPath, String filename, String tempFilePath, int time) async {
     final File jsonFile = File('$tempFilePath/record.json');
     if (jsonFile.existsSync()) {
-      print("existeelrecord");
-      List<dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
-      saveRecordToJson(dataPath, jsonFileContent, filename: filename);
+      List<dynamic> jsonRecords = json.decode(jsonFile.readAsStringSync());
+
+      exportRecordToJson(dataPath, jsonRecords, filename, time);
     }
   }
 
@@ -113,7 +132,6 @@ class JData {
   Future<void> deleteFile(String filename) async {
     File file = File(filename);
     if (file.existsSync()) {
-      //print('BORRADO ARCHIVOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO');
       await file.delete();
     }
   }
