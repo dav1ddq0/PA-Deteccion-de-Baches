@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1200pt"
+   height="1200pt"
+   version="1.1"
+   viewBox="0 0 1200 1200"
+   id="svg10"
+   sodipodi:docname="pothole_icon_logo.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs14" />
+  <sodipodi:namedview
+     id="namedview12"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="pt"
+     showgrid="false"
+     inkscape:zoom="0.519375"
+     inkscape:cx="799.0373"
+     inkscape:cy="799.0373"
+     inkscape:window-width="1920"
+     inkscape:window-height="1012"
+     inkscape:window-x="0"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg10" />
+  <g
+     id="g8"
+     style="fill:#ff7f2a;fill-opacity:1">
+    <path
+       d="m0 1089.8h1200v-133.13h-110.75l-22.574 66.469-200 33.324-83.352-100.01-783.32 0.21484z"
+       id="path2"
+       style="fill:#ff7f2a;fill-opacity:1" />
+    <path
+       d="m828.35 321.23c0 34.16-27.691 61.848-61.848 61.848s-61.848-27.688-61.848-61.848c0-34.156 27.691-61.848 61.848-61.848s61.848 27.691 61.848 61.848"
+       id="path4"
+       style="fill:#ff7f2a;fill-opacity:1" />
+    <path
+       d="m1052.7 486.35-57.469-228.37c-10.633-43.68-40.727-83.438-105.97-91.812l-322.43-39.863-121.09-14.953c-65.051-7.7539-103.91 23.496-125.15 63.238l-111.34 207.52c-34.078 0.17969-98.258 32.207-107.36 106.85l-34.309 277.49 82.355 10.176-10.945 88.57c-13.715 109.2 140.99 127.01 154.3 19.066l10.934-88.559 278.16 34.367 277.48 34.309-10.934 88.559c-13.055 107.98 141.37 128.36 154.95 19.176l10.957-88.57 82.367 10.176 34.309-277.49c8.9648-74.652-45.527-121.37-78.805-129.88zm-722.16 68.137c-4.957 40.5-41.004 69.48-80.34 64.5-39.48-4.7773-67.344-41.641-62.207-82.129 4.9062-40.801 40.922-69.805 80.34-64.586 39.406 4.5508 67.281 41.449 62.207 82.215zm559.75-90.289c-5.3047-29.832-24.938-55.43-60.961-59.867l-137.58-17.062c-33.742-4.1758-60.277 14.258-73.066 43.355l-321.35-39.707 84.875-163.77c10.691-23.41 24.781-39.359 52.969-36.312l222.13 27.492 0.66016 0.070313 222.84 27.539c27.684 3.8516 37.477 22.738 42.504 48.098l42.434 179.5zm146.04 177.55c-5.2578 40.465-41.293 69.395-80.34 64.477-39.77-4.7891-67.691-41.688-62.891-82.199 5.2578-40.754 41.305-69.758 81.035-64.5 39.105 4.5 66.984 41.387 62.195 82.223z"
+       id="path6"
+       style="fill:#ff7f2a;fill-opacity:1" />
+  </g>
+</svg>

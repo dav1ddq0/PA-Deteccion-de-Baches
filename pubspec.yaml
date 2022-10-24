@@ -41,6 +41,12 @@ dependencies:
   latlong2: ^0.8.1
   sorted_list: ^1.0.0
   decimal: ^2.1.0
+  path_provider: ^2.0.10
+  permission_handler: ^9.2.0
+  device_info_plus: ^3.2.3
+  file_picker: ^4.6.1
+  syncfusion_flutter_charts: ^20.3.50
+  flutter_launcher_icons: ^0.10.0
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +61,11 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon.png"
+ 
 
 # The following section is specific to Flutter.
 flutter:
