@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:deteccion_de_baches/src/utils/permissions.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:geolocator/geolocator.dart';
 
 // Folders needed for data persistence in the Pothole application
 Future<void> makeAppFolders(
@@ -23,35 +24,36 @@ Future<void> createDirectory(String dataPath) async {
   }
 }
 
+// Delete a file from its name
+Future<void> deleteFile(String filename) async {
+  File file = File(filename);
+  if (file.existsSync()) {
+    await file.delete();
+  }
+}
+
 // Check if a filename alreaddy exists
 bool myfileAlreadyExists(filename) {
   return File("$filename").existsSync();
 }
 
+Future<void> clearTempPicker() async {
+  await FilePicker.platform.clearTemporaryFiles();
+}
+
+// Pick a file using the  native file explorer of the device
 Future<PlatformFile?> pickFile() async {
+  // An utility method that will explicitly prune cached files from the picker
+  await clearTempPicker();
   FilePickerResult? result = await FilePicker.platform.pickFiles(
     type: FileType.any,
-    //allowedExtensions: ['json'],
   );
 
   if (result != null) {
-    // File file = File(result.files.single.path.toString());
-    // print(result.files.single.path.toString());
     PlatformFile file = result.files.first;
-
-    // print(file.name);
-    // print(file.bytes);
-    // print(file.size);
-    // print(file.extension);
-    // print(file.path);
     return file;
-    // if (file.extension != 'json'){
-    //   return null;
-    // }
-    // else{return file;}
   } else {
     return null;
-    // User canceled the picker
   }
 }
 
@@ -84,4 +86,76 @@ Future<List<dynamic>> loadRecords(PlatformFile? file) async {
     }
   }
   return [];
+}
+
+Future<File> saveRecordToJson(String dataPath, List<dynamic> data,
+    {String filename = 'record'}) async {
+  final File jsonFile = File('$dataPath/$filename.json');
+
+  if (jsonFile.existsSync()) {
+    List<dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
+
+    jsonFileContent.addAll(data);
+    jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+    return jsonFile;
+  } else {
+    jsonFile.writeAsStringSync(json.encode(data));
+    return jsonFile;
+  }
+}
+
+Future<File> exportRecordToJson(
+    String dataPath, List<dynamic> data, String filename, int time) async {
+  final File jsonFile = File('$dataPath/$filename.json');
+
+  if (jsonFile.existsSync()) {
+    Map<String, dynamic> jsonFileContent =
+        json.decode(jsonFile.readAsStringSync());
+
+    jsonFileContent['records'] = data;
+    jsonFileContent['time'] = time;
+    jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+
+    return jsonFile;
+  } else {
+    jsonFile.writeAsStringSync(json.encode({'records': data, 'time': time}));
+    return jsonFile;
+  }
+}
+
+Future<File> saveMarksToJson(
+    String dataPath, Position position, String label) async {
+  final File jsonFile = File('$dataPath/marks.json');
+  final Map newMark = {
+    'position': {
+      'latitude': position.latitude,
+      'longitude': position.longitude
+    },
+    'label': label,
+  };
+
+  if (jsonFile.existsSync()) {
+    Map<String, dynamic> jsonFileContent =
+        json.decode(jsonFile.readAsStringSync());
+    jsonFileContent['marks']?.add(newMark);
+    jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+    return jsonFile;
+  } else {
+    List<dynamic> mark = [
+      newMark,
+    ];
+    final Map<String, List<dynamic>> data = {'marks': mark};
+    jsonFile.writeAsStringSync(json.encode(data));
+    return jsonFile;
+  }
+}
+
+Future<void> exportRecordData(
+    String dataPath, String filename, String tempFilePath, int time) async {
+  final File jsonFile = File('$tempFilePath/record.json');
+  if (jsonFile.existsSync()) {
+    List<dynamic> jsonRecords = json.decode(jsonFile.readAsStringSync());
+
+    exportRecordToJson(dataPath, jsonRecords, filename, time);
+  }
 }

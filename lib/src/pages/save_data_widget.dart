@@ -3,7 +3,6 @@ import 'package:deteccion_de_baches/src/themes/my_style.dart';
 import 'package:deteccion_de_baches/src/themes/color.dart';
 import 'package:deteccion_de_baches/src/pages/pothole_snackbar.dart';
 import '../utils/permissions.dart';
-import '../utils/saved_data.dart';
 import '../utils/storage_utils.dart';
 
 class SaveDataDialog extends StatefulWidget {
@@ -25,13 +24,11 @@ class SaveDataDialog extends StatefulWidget {
 
 class _SaveDataDialogState extends State<SaveDataDialog> {
   late TextEditingController fileNameController;
-  late JData collectedData;
 
   @override
   void initState() {
     super.initState();
     fileNameController = TextEditingController();
-    collectedData = JData();
   }
 
   SnackBar _emptyRecordNameSB() {
@@ -80,7 +77,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
       // ),
       onPressed: () {
         String filename = fileNameController.text;
-        if (filename == null || filename == "") {
+        if (filename == "") {
           ScaffoldMessenger.of(context).showSnackBar(_emptyRecordNameSB());
         } else {
           String fullPath =
@@ -92,7 +89,7 @@ class _SaveDataDialogState extends State<SaveDataDialog> {
                 .showSnackBar(_fileAlreadyExistsSB(filename));
           } else {
             // Exported  file to the exported folder
-            collectedData.exportRecordData(
+            exportRecordData(
                 '${widget.mainDirectory}/${widget.subdirectories[2]}',
                 filename,
                 '${widget.mainDirectory}/${widget.subdirectories[0]}', widget.time);

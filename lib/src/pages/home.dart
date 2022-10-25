@@ -9,7 +9,6 @@ import 'package:deteccion_de_baches/src/recorder_button.dart';
 import 'package:deteccion_de_baches/src/pages/save_data_widget.dart';
 import 'package:deteccion_de_baches/src/themes/color.dart';
 import 'package:deteccion_de_baches/src/utils/permissions.dart';
-import 'package:deteccion_de_baches/src/utils/saved_data.dart';
 import 'package:deteccion_de_baches/src/utils/signal_processing.dart';
 import 'package:deteccion_de_baches/src/utils/tools.dart';
 import 'package:deteccion_de_baches/src/utils/storage_utils.dart';
@@ -51,7 +50,6 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
   late GyroscopeEvent gyroEvent;
   late AccelerometerEvent accelEvent;
-  late JData collectedData;
   String recordLabel = "normal";
   bool bumpDetected = false;
 
@@ -60,12 +58,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     super.initState();
     fileNameController = TextEditingController();
     scanning = false;
-    collectedData = JData();
     time = 0;
-    // _stopwatch = Stopwatch();
-    // _timer = new Timer.periodic(new Duration(milliseconds: 30), (timer) {
-    //   setState(() {});
-    // });
   }
 
   // Return the current posution of the device (currernt GPS location)
@@ -102,7 +95,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         samplingRate: accelReadIntervals);
 
     if (sensorData.length == 10) {
-      await collectedData.saveRecordToJson(
+      await saveRecordToJson(
           '$mainDirectory/${subdirectories[0]}', sensorData);
       sensorData.clear();
     }
@@ -210,21 +203,21 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       });
     }
   }
-
+  // start timer of the accelerometer
   void startAccelTimer() {
     accelTimer =
         Timer.periodic(Duration(milliseconds: accelReadIntervals), (timer) {
       storeSensorData();
     });
   }
-
+  // start timer of the gyroscope
   void startGeoTimer() {
     geoLocTimer =
         Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
       storeGeoData();
     });
   }
-
+  // main timer method to call all
   void startTimers() {
     startAccelTimer();
     startGeoTimer();
@@ -248,7 +241,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     if (!scanning) {
       if (sensorData.isNotEmpty) {
         makeAppFolders(mainDirectory, subdirectories);
-        await collectedData.saveRecordToJson(
+        await saveRecordToJson(
             '$mainDirectory/${subdirectories[0]}', sensorData);
       }
 
@@ -258,7 +251,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       speedRead.clear();
     } else {
       String fileName = '$mainDirectory/${subdirectories[0]}/record.json';
-      await collectedData.deleteFile(fileName);
+      await deleteFile(fileName);
     }
     switchTimerAndEvents();
   }
@@ -315,9 +308,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  // callbackStopwatch(crono) {
-  //   milliseconds = crono;
-  // }
+
 
   // Widgets
 

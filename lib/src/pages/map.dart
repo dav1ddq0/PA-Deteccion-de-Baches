@@ -10,6 +10,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:deteccion_de_baches/src/pages/pothole_snackbar.dart';
+import 'package:deteccion_de_baches/src/pages/pothole_drop_down_button.dart';
 
 class MapTab extends StatefulWidget {
   MapTab({Key? key}) : super(key: key);
@@ -24,6 +25,12 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
   String? selectedItem = "Marks";
 
   double zoom = 14.0;
+
+  callback(newSelectedItem) {
+    setState(() {
+      selectedItem = newSelectedItem;
+    });
+  }
 
   SnackBar _maxZoomReach() {
     SnackBar _snackBar =
@@ -108,31 +115,37 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
         });
   }
 
+// SizedBox(
+//             width: 200,
+//             child: DropdownButtonFormField<String>(
+//               decoration: InputDecoration(
+//                   enabledBorder: OutlineInputBorder(
+//                       borderRadius: BorderRadius.circular(12),
+//                       borderSide:
+//                           BorderSide(width: 3, color: PotholeColor.primary)),
+//                   iconColor: PotholeColor.primary),
+//               value: selectedItem,
+//               items: items
+//                   .map((item) => DropdownMenuItem<String>(
+//                       value: item,
+//                       child: Text(item,
+//                           style: TextStyle(fontSize: 16, color: Colors.white))))
+//                   .toList(),
+//               onChanged: (item) => setState(() {
+//                 selectedItem = item;
+//               }),
+//             ))
   Widget dataSelectorDialog() {
     return AlertDialog(
         title:
             const Text('Map Selector ', style: TextStyle(color: Colors.white)),
         backgroundColor: PotholeColor.darkText,
-        content: SizedBox(
-            width: 200,
-            child: DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(width: 3, color: PotholeColor.primary)),
-                  iconColor: PotholeColor.primary),
-              value: selectedItem,
-              items: items
-                  .map((item) => DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item,
-                          style: TextStyle(fontSize: 16, color: Colors.white))))
-                  .toList(),
-              onChanged: (item) => setState(() {
-                selectedItem = item;
-              }),
-            )),
+        content: PotholeDropDownButton(
+          width: 200,
+          selectedItem: selectedItem,
+          items: items,
+          callback: callback,
+        ),
         actions: <Widget>[okButton()]);
   }
 
@@ -149,7 +162,21 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                 return dataSelectorDialog();
               });
         },
-        child: Icon(Icons.add, color: PotholeColor.darkText));
+        child: const Icon(Icons.add, color: PotholeColor.darkText));
+  }
+
+  Widget centerAgain() {
+    return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+            primary: PotholeColor.primary,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.all(15)),
+        onPressed: ()  {
+          setState(() {
+            
+          });
+        },
+        child: const Icon(Icons.gps_fixed, color: PotholeColor.darkText));
   }
 
   @override
@@ -158,7 +185,7 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
         body: Container(child: MapPage(marks: marks, zoom: zoom)),
         floatingActionButton: Container(
             alignment: Alignment.topRight,
-            padding: EdgeInsets.only(top: 20, right: 20, left: 20),
+            padding: const EdgeInsets.only(top: 20, right: 20, left: 20),
             child: Row(
               children: [
                 addMarks(),
@@ -166,6 +193,8 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                 zoomPlus(),
                 const SizedBox(width: 8),
                 zoomMinus(),
+                const SizedBox(width: 20),
+                centerAgain()
               ],
             )));
   }
@@ -177,18 +206,24 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
 class MapPage extends StatelessWidget {
   late List<Marker> markers = <Marker>[];
   late double zoom;
+  Color potholeColor = PotholeColor.darkText;
+  Color notPotholeColor = PotholeColor.primary;
 
   MapPage({required List<dynamic> marks, required double zoom, Key? key})
       : super(key: key) {
     for (var mark in marks) {
       // print(mark);
       dynamic position = mark['position'];
+      dynamic markLabel = mark['label'];
       markers.add(Marker(
           width: 80.0,
           height: 80.0,
           point: LatLng(position['latitude'], position['longitude']),
           builder: (ctx) => Container(
-                child: Icon(Icons.location_on, color: PotholeColor.primary),
+                child: Icon(Icons.location_on,
+                    color:
+                        markLabel == "pothole" ? potholeColor : notPotholeColor,
+                    size: 20),
               )));
     }
     this.zoom = zoom;
@@ -196,8 +231,6 @@ class MapPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(zoom);
-    print(markers);
     return FlutterMap(
       key: UniqueKey(),
       options: MapOptions(
