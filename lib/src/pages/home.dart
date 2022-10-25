@@ -14,7 +14,7 @@ import 'package:deteccion_de_baches/src/utils/tools.dart';
 import 'package:deteccion_de_baches/src/utils/storage_utils.dart';
 import 'package:deteccion_de_baches/src/pages/sensors.dart';
 import 'package:deteccion_de_baches/src/pages/mark_anomaly_widget.dart';
-
+import 'package:deteccion_de_baches/src/pages/map_current_location.dart';
 class HomeTab extends StatefulWidget {
   const HomeTab({Key? key}) : super(key: key);
 
@@ -95,8 +95,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         samplingRate: accelReadIntervals);
 
     if (sensorData.length == 10) {
-      await saveRecordToJson(
-          '$mainDirectory/${subdirectories[0]}', sensorData);
+      await saveRecordToJson('$mainDirectory/${subdirectories[0]}', sensorData);
       sensorData.clear();
     }
 
@@ -203,6 +202,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       });
     }
   }
+
   // start timer of the accelerometer
   void startAccelTimer() {
     accelTimer =
@@ -210,6 +210,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       storeSensorData();
     });
   }
+
   // start timer of the gyroscope
   void startGeoTimer() {
     geoLocTimer =
@@ -217,6 +218,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       storeGeoData();
     });
   }
+
   // main timer method to call all
   void startTimers() {
     startAccelTimer();
@@ -308,8 +310,6 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     });
   }
 
-
-
   // Widgets
 
   // GPS Widget
@@ -348,6 +348,43 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         z: sensorData.isNotEmpty
             ? '${sensorData.last['gyroscope'][2]}'
             : 'None');
+  }
+
+  Widget viewGraphButtonWidget() {
+    return ElevatedButton(
+      onPressed: () {
+        
+        
+      },
+      child: const Icon(Icons.graphic_eq, color: PotholeColor.darkText),
+      style: ElevatedButton.styleFrom(
+          primary: PotholeColor.primary,
+          shape: const CircleBorder(),
+          padding: const EdgeInsets.all(8),
+          textStyle: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: PotholeColor.darkText)),
+    );
+  }
+
+  Widget showCurrentLocationButtonWidget() {
+    return ElevatedButton(
+      onPressed: () {
+        if (currentPosition != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (context)=> MapCLocation(currentLocation: currentPosition)));
+        }
+      },
+      child: const Icon(Icons.gps_fixed, color: PotholeColor.darkText),
+      style: ElevatedButton.styleFrom(
+          primary: PotholeColor.primary,
+          shape: const CircleBorder(),
+          padding: const EdgeInsets.all(8),
+          textStyle: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: PotholeColor.darkText)),
+    );
   }
 
   Widget cancelAButton() {
@@ -429,34 +466,35 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     );
   }
 
-  Widget stateDrapdownButton(){
+  Widget stateDrapdownButton() {
     return SizedBox(
       width: 300,
-      child:DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        BorderSide(width: 3, color: PotholeColor.primary)),
-                        iconColor: PotholeColor.primary),
-            value: selectedItem,
-            items: items
-                .map((item) => DropdownMenuItem<String>(
-                    value: item,
-                    child: Text(item, style: TextStyle(fontSize: 16, color: Colors.white))))
-                .toList(),
-            onChanged: (item) => setState(() {
-                  selectedItem = item;
-                })) ,
+      child: DropdownButtonFormField<String>(
+          decoration: InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(width: 3, color: PotholeColor.primary)),
+              iconColor: PotholeColor.primary),
+          value: selectedItem,
+          items: items
+              .map((item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item,
+                      style: TextStyle(fontSize: 16, color: Colors.white))))
+              .toList(),
+          onChanged: (item) => setState(() {
+                selectedItem = item;
+              })),
     );
   }
 
   Widget specialEventsRow() {
     return Container(
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.all(10),
-        child: stateDrapdownButton(),
-        );
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
+      child: stateDrapdownButton(),
+    );
   }
 
   @override
@@ -473,7 +511,9 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         const SensorName(),
         speedWidget(),
         gpsWidget(),
+        showCurrentLocationButtonWidget(),
         acceWidget(),
+        viewGraphButtonWidget(),
         gyroWidget(),
       ])),
     );
@@ -485,7 +525,6 @@ class StateName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(10),

@@ -148,17 +148,8 @@ class AccelerometerSensor extends StatelessWidget {
                 AxisRowWidget(axisTag: "Y Axis:", lecture: y),
                 AxisRowWidget(axisTag: "Z Axis:", lecture: z),
               ],
-            ),
-            ElevatedButton(
-              onPressed: () {},
-              child: const Icon(Icons.graphic_eq, color: PotholeColor.darkText),
-              style: ElevatedButton.styleFrom(
-                  primary: PotholeColor.primary,
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(8),
-                  textStyle: const TextStyle(
-                      fontSize: 10, fontWeight: FontWeight.bold, color: PotholeColor.darkText)),
             )
+            
           ],
         ));
   }
