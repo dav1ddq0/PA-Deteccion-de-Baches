@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:tuple/tuple.dart';
 
 // 0 - parado, 1 - en movimiento
 

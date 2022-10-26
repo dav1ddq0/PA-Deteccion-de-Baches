@@ -1,13 +1,13 @@
 Map<int, int> sampleRateRanges = {
-  0: 20,
-  1: 40,
-  2: 60,
-  3: 80,
-  4: 100,
-  6: 120,
-  7: 140,
-  8: 160,
-  9: 180
+  0: 3,
+  1: 6,
+  2: 8,
+  3: 11,
+  4: 14,
+  6: 19,
+  7: 22,
+  8: 25,
+  9: 27
 };
 
 double recomputeSamplingRate(int sampleCount, double speed) {
