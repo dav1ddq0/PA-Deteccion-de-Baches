@@ -1,3 +1,4 @@
+import 'package:deteccion_de_baches/src/pages/pothole_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
@@ -15,6 +16,7 @@ import 'package:deteccion_de_baches/src/utils/storage_utils.dart';
 import 'package:deteccion_de_baches/src/pages/sensors.dart';
 import 'package:deteccion_de_baches/src/pages/mark_anomaly_widget.dart';
 import 'package:deteccion_de_baches/src/pages/map_current_location.dart';
+
 class HomeTab extends StatefulWidget {
   const HomeTab({Key? key}) : super(key: key);
 
@@ -190,7 +192,6 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       if (currSpeed != 0) {
         double newSamplingRate = recomputeSamplingRate(1, currSpeed);
         accelReadIntervals = (1000 * newSamplingRate).floor();
-        geoLocReadIntervals = (1000 * newSamplingRate).floor();
       }
       /* currSpeed = speedRead.last * 0.8 + currSpeed * 0.2; */
 
@@ -211,7 +212,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  // start timer of the gyroscope
+  // start timer of the GPS
   void startGeoTimer() {
     geoLocTimer =
         Timer.periodic(Duration(milliseconds: geoLocReadIntervals), (timer) {
@@ -227,15 +228,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     speedTimer = Timer.periodic(
         const Duration(milliseconds: speedReadIntervals), (timer) {
       updateSpeedRead();
-      geoReadings++;
-      if (geoReadings == 5) {
-        geoReadings = 0;
-        accelTimer.cancel();
-        geoLocTimer.cancel();
-
-        startAccelTimer();
-        startGeoTimer();
-      }
+      accelTimer.cancel();
+      startAccelTimer();
     });
   }
 
@@ -352,10 +346,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
   Widget viewGraphButtonWidget() {
     return ElevatedButton(
-      onPressed: () {
-        
-        
-      },
+      onPressed: () {},
       child: const Icon(Icons.graphic_eq, color: PotholeColor.darkText),
       style: ElevatedButton.styleFrom(
           primary: PotholeColor.primary,
@@ -372,7 +363,14 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     return ElevatedButton(
       onPressed: () {
         if (currentPosition != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (context)=> MapCLocation(currentLocation: currentPosition)));
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      MapCLocation(currentLocation: currentPosition)));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(primaryPotholeSnackBar(
+              "Please wait for the location to be fetched"));
         }
       },
       child: const Icon(Icons.gps_fixed, color: PotholeColor.darkText),
