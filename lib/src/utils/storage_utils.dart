@@ -129,7 +129,8 @@ Future<File> saveMarksToJson(
   final Map newMark = {
     'position': {
       'latitude': position.latitude,
-      'longitude': position.longitude
+      'longitude': position.longitude,
+      'accuracy': position.accuracy,
     },
     'label': label,
   };

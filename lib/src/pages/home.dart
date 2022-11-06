@@ -113,7 +113,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
           'gyroscope': gyroData.values,
           'gps': {
             'latitude': currentPosition!.latitude,
-            'longitude': currentPosition!.longitude
+            'longitude': currentPosition!.longitude,
+            'accuracy':  currentPosition!.accuracy,
           },
           'speed': currentSpeed,
           'sampling': accelReadIntervals,
@@ -346,6 +347,10 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     return SpeedSensor(speed: speedRead.isEmpty ? 'None' : '${speedRead.last}');
   }
 
+  Widget speed2Widget() {
+    return SpeedSensor(speed: geoLoc.isEmpty ? 'None' : '${geoLoc.last?.speed.toStringAsPrecision(4)}');
+  }
+
   Widget acceWidget() {
     return AccelerometerSensor(
         x: sensorData.isNotEmpty
@@ -536,6 +541,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         specialEventsRow(),
         const SensorName(),
         speedWidget(),
+        speed2Widget(),
         gpsWidget(),
         showCurrentLocationButtonWidget(),
         acceWidget(),
