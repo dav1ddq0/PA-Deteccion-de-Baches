@@ -18,12 +18,14 @@ class SensorName extends StatelessWidget {
 class GPSSensor extends StatelessWidget {
   final String latitude;
   final String longitude;
+  final String accuracy;
 
-  const GPSSensor({
-    Key? key,
-    required this.latitude,
-    required this.longitude,
-  }) : super(key: key);
+  const GPSSensor(
+      {Key? key,
+      required this.latitude,
+      required this.longitude,
+      required this.accuracy})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -37,17 +39,31 @@ class GPSSensor extends StatelessWidget {
               children: [
                 Icon(Icons.location_on, color: PotholeColor.primary, size: 37),
                 Text("GPS:",
-                    style: TextStyle(color: PotholeColor.primary, fontSize: 18)),
+                    style:
+                        TextStyle(color: PotholeColor.primary, fontSize: 18)),
               ],
             ),
             LatLngRowWidget(name: "Lat", value: latitude),
-            LatLngRowWidget(name: "Lng", value: longitude)
+            LatLngRowWidget(name: "Lng", value: longitude),
+            LocationAccuracyWidget(accuracy: accuracy)
           ],
         ));
   }
 }
 
+class LocationAccuracyWidget extends StatelessWidget {
+  final String accuracy;
+  const LocationAccuracyWidget({required this.accuracy, Key? key})
+      : super(key: key);
 
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Text("Accuracy: $accuracy m",
+          style: TextStyle(color: PotholeColor.primary, fontSize: 20))
+    ]);
+  }
+}
 
 class SpeedSensor extends StatelessWidget {
   final String speed;
@@ -149,7 +165,6 @@ class AccelerometerSensor extends StatelessWidget {
                 AxisRowWidget(axisTag: "Z Axis:", lecture: z),
               ],
             )
-            
           ],
         ));
   }

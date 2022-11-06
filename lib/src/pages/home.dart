@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
-
 import 'package:deteccion_de_baches/src/utils/accelerometer_data.dart';
 import 'package:deteccion_de_baches/src/utils/gyroscope_data.dart';
 import 'package:deteccion_de_baches/src/recorder_button.dart';
@@ -38,6 +37,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   int geoReadings = 0;
 
   final streamSubscriptions = <StreamSubscription<dynamic>>[];
+  late Stream<Position> positionStream;
+  StreamSubscription<Position>?  positionSubscription;
 
   final List<Map<String, dynamic>> sensorData = [];
   final List<Position?> geoLoc = [];
@@ -52,6 +53,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
   late GyroscopeEvent gyroEvent;
   late AccelerometerEvent accelEvent;
+  Position? positionEvent;
   String recordLabel = "normal";
   bool bumpDetected = false;
 
@@ -61,6 +63,9 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     fileNameController = TextEditingController();
     scanning = false;
     time = 0;
+    positionStream = Geolocator.getPositionStream(
+        desiredAccuracy: LocationAccuracy.best, distanceFilter: 0);
+    
   }
 
   // Return the current posution of the device (currernt GPS location)
@@ -86,9 +91,9 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         z: accelReadZ,
         samplingRate: accelReadIntervals);
 
-    final double gyroReadX = double.parse(accelEvent.x.toStringAsPrecision(6));
-    final double gyroReadY = double.parse(accelEvent.y.toStringAsPrecision(6));
-    final double gyroReadZ = double.parse(accelEvent.z.toStringAsPrecision(6));
+    final double gyroReadX = double.parse(gyroEvent.x.toStringAsPrecision(6));
+    final double gyroReadY = double.parse(gyroEvent.y.toStringAsPrecision(6));
+    final double gyroReadZ = double.parse(gyroEvent.z.toStringAsPrecision(6));
 
     final GyroscopeData gyroData = GyroscopeData(
         x: gyroReadX,
@@ -128,7 +133,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  List<double> updateGeoData(double currLat, currLong, prevLat, prevLong) {
+  List<double> updateGeoData(currLat, currLong, prevLat, prevLong) {
     if (geoLoc.length == 5000) {
       geoLoc.clear();
     }
@@ -143,37 +148,39 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
-    Position newRead = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+    //Position newRead = await Geolocator.getCurrentPosition(
+    //     desiredAccuracy: LocationAccuracy.best);
 
     // double currLat = double.parse(newRead.latitude.toStringAsPrecision(10));
     // double currLong = double.parse(newRead.longitude.toStringAsPrecision(10));
+    if (positionEvent != null) {
+      Position newRead = positionEvent as Position;
+      print(newRead.accuracy);
+      var newGeoFilt = [newRead.latitude, newRead.longitude];
 
-    var newGeoFilt = [newRead.latitude, newRead.longitude];
+      if (prevLat != 0 && prevLong != 0) {
+        newGeoFilt = updateGeoData(
+            newRead.latitude, newRead.longitude, prevLat, prevLong);
+      }
+      // Actualizar lecturas de velocidad y coordenadas.
 
-    if (prevLat != 0 && prevLong != 0) {
-      newGeoFilt =
-          updateGeoData(newRead.latitude, newRead.longitude, prevLat, prevLong);
+      final readFiltered = Position(
+        latitude: newGeoFilt[0],
+        longitude: newGeoFilt[1],
+        timestamp: newRead.timestamp,
+        accuracy: newRead.accuracy,
+        altitude: newRead.altitude,
+        heading: newRead.heading,
+        speed: newRead.speed,
+        speedAccuracy: newRead.speedAccuracy,
+      );
+
+      prevGeoLocSpeedComp ??= readFiltered;
+
+      setState(() {
+        geoLoc.add(readFiltered);
+      });
     }
-
-    // Actualizar lecturas de velocidad y coordenadas.
-
-    final readFiltered = Position(
-      latitude: newGeoFilt[0],
-      longitude: newGeoFilt[1],
-      timestamp: newRead.timestamp,
-      accuracy: newRead.accuracy,
-      altitude: newRead.altitude,
-      heading: newRead.heading,
-      speed: newRead.speed,
-      speedAccuracy: newRead.speedAccuracy,
-    );
-
-    prevGeoLocSpeedComp ??= readFiltered;
-
-    setState(() {
-      geoLoc.add(readFiltered);
-    });
   }
 
   Future<void> updateSpeedRead() async {
@@ -269,6 +276,13 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     }));
   }
 
+  void subscribeLocationListener() {
+    positionSubscription = positionStream.listen((Position? position) {
+      positionEvent = position;
+      print(position);
+    });
+  }
+
   void switchTimerAndEvents() {
     if (scanning) {
       startTimers();
@@ -283,6 +297,17 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         for (var subscription in streamSubscriptions) {
           subscription.resume();
         }
+
+        
+      }
+
+      if (positionSubscription == null){
+        subscribeLocationListener();
+        
+        
+      }
+      else{
+        positionSubscription?.resume();
       }
     } else {
       geoLocTimer.cancel();
@@ -291,6 +316,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       for (var subscription in streamSubscriptions) {
         subscription.pause();
       }
+      positionSubscription?.pause();
     }
   }
   // late Timer _timer;
@@ -310,7 +336,9 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   Widget gpsWidget() {
     return GPSSensor(
         latitude: geoLoc.isNotEmpty ? '${geoLoc.last?.latitude}' : 'None',
-        longitude: geoLoc.isNotEmpty ? '${geoLoc.last?.longitude}' : 'None');
+        longitude: geoLoc.isNotEmpty ? '${geoLoc.last?.longitude}' : 'None',
+        accuracy: geoLoc.isNotEmpty ? '${geoLoc.last?.accuracy.toStringAsPrecision(4)}' : 'None');
+        // accuracy: geoLoc.isEmpty ? '${geoLoc.last?.accuracy}' : 'None');
   }
 
   // Speed Widget
