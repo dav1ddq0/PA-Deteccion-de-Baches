@@ -67,7 +67,8 @@ class LocationAccuracyWidget extends StatelessWidget {
 
 class SpeedSensor extends StatelessWidget {
   final String speed;
-  const SpeedSensor({required this.speed, Key? key}) : super(key: key);
+  final String name;
+  const SpeedSensor({required this.speed, required this.name,  Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +79,7 @@ class SpeedSensor extends StatelessWidget {
         children: [
           Icon(Icons.speed_rounded, color: PotholeColor.primary, size: 37),
           const SizedBox(width: 8),
-          Text("Speed:",
+          Text("$name:",
               style: TextStyle(color: PotholeColor.primary, fontSize: 18)),
           const SizedBox(width: 8),
           Text("$speed  km/h",

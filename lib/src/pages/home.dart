@@ -38,7 +38,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
   final streamSubscriptions = <StreamSubscription<dynamic>>[];
   late Stream<Position> positionStream;
-  StreamSubscription<Position>?  positionSubscription;
+  StreamSubscription<Position>? positionSubscription;
 
   final List<Map<String, dynamic>> sensorData = [];
   final List<Position?> geoLoc = [];
@@ -65,7 +65,6 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     time = 0;
     positionStream = Geolocator.getPositionStream(
         desiredAccuracy: LocationAccuracy.best, distanceFilter: 0);
-    
   }
 
   // Return the current posution of the device (currernt GPS location)
@@ -114,9 +113,10 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
           'gps': {
             'latitude': currentPosition!.latitude,
             'longitude': currentPosition!.longitude,
-            'accuracy':  currentPosition!.accuracy,
+            'accuracy': currentPosition!.accuracy,
           },
-          'speed': currentSpeed,
+          'speed_ours': currentSpeed,
+          'speed_gps': currentPosition!.speed,
           'sampling': accelReadIntervals,
           'label': selectedItem as String,
         });
@@ -190,25 +190,29 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     }
 
     if (prevGeoLocSpeedComp != null) {
-      double currSpeed = computeSpeed(
-          prevGeoLocSpeedComp!.latitude,
-          prevGeoLocSpeedComp!.longitude,
-          geoLoc.last!.latitude,
-          geoLoc.last!.longitude,
-          (speedReadIntervals / 1000));
+      if (currentPosition != null) {
+        double currSpeed = currentPosition!.speed;
 
-      if (currSpeed != 0) {
-        double newSamplingRate = recomputeSamplingRate(1, currSpeed);
-        accelReadIntervals = (1000 * newSamplingRate).floor();
-      }
-      /* currSpeed = speedRead.last * 0.8 + currSpeed * 0.2; */
+        // computeSpeed(
+        //     prevGeoLocSpeedComp!.latitude,
+        //     prevGeoLocSpeedComp!.longitude,
+        //     geoLoc.last!.latitude,
+        //     geoLoc.last!.longitude,
+        //     (speedReadIntervals / 1000));
 
-      setState(() {
-        if (geoLoc.isNotEmpty) {
-          prevGeoLocSpeedComp = geoLoc.last;
+        if (currSpeed != 0) {
+          double newSamplingRate = recomputeSamplingRate(1, currentSpeed);
+          accelReadIntervals = (1000 * newSamplingRate).floor();
         }
-        speedRead.add(currSpeed);
-      });
+        /* currSpeed = speedRead.last * 0.8 + currSpeed * 0.2; */
+
+        setState(() {
+          if (geoLoc.isNotEmpty) {
+            prevGeoLocSpeedComp = geoLoc.last;
+          }
+          speedRead.add(currSpeed);
+        });
+      }
     }
   }
 
@@ -298,16 +302,11 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
         for (var subscription in streamSubscriptions) {
           subscription.resume();
         }
-
-        
       }
 
-      if (positionSubscription == null){
+      if (positionSubscription == null) {
         subscribeLocationListener();
-        
-        
-      }
-      else{
+      } else {
         positionSubscription?.resume();
       }
     } else {
@@ -338,17 +337,25 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     return GPSSensor(
         latitude: geoLoc.isNotEmpty ? '${geoLoc.last?.latitude}' : 'None',
         longitude: geoLoc.isNotEmpty ? '${geoLoc.last?.longitude}' : 'None',
-        accuracy: geoLoc.isNotEmpty ? '${geoLoc.last?.accuracy.toStringAsPrecision(4)}' : 'None');
-        // accuracy: geoLoc.isEmpty ? '${geoLoc.last?.accuracy}' : 'None');
+        accuracy: geoLoc.isNotEmpty
+            ? '${geoLoc.last?.accuracy.toStringAsPrecision(4)}'
+            : 'None');
+    // accuracy: geoLoc.isEmpty ? '${geoLoc.last?.accuracy}' : 'None');
   }
 
   // Speed Widget
   Widget speedWidget() {
-    return SpeedSensor(speed: speedRead.isEmpty ? 'None' : '${speedRead.last}');
+    return SpeedSensor(
+        speed: speedRead.isEmpty ? 'None' : '${speedRead.last}',
+        name: "Speed Ours");
   }
 
   Widget speed2Widget() {
-    return SpeedSensor(speed: geoLoc.isEmpty ? 'None' : '${geoLoc.last?.speed.toStringAsPrecision(4)}');
+    return SpeedSensor(
+        speed: geoLoc.isEmpty
+            ? 'None'
+            : '${geoLoc.last?.speed.toStringAsPrecision(4)}',
+        name: "Speed GPS");
   }
 
   Widget acceWidget() {
