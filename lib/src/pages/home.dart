@@ -74,7 +74,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
 
   // Return the current speed of the car
   double get currentSpeed {
-    return speedRead.isNotEmpty ? speedRead.last : -1;
+    return speedRead.isNotEmpty ? speedRead.last : 0;
   }
 
   Future<void> storeSensorData() async {
@@ -115,8 +115,8 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
             'longitude': currentPosition!.longitude,
             'accuracy': currentPosition!.accuracy,
           },
-          'speed_ours': currentSpeed,
-          'speed_gps': currentPosition!.speed,
+          'speed': currentSpeed,
+          // 'speed_gps': currentPosition!.speed,
           'sampling': accelReadIntervals,
           'label': selectedItem as String,
         });
@@ -190,15 +190,15 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     }
 
     if (prevGeoLocSpeedComp != null) {
-      if (currentPosition != null) {
-        double currSpeed = currentPosition!.speed;
+      
+        // double currSpeed = currentPosition!.speed;
 
-        // computeSpeed(
-        //     prevGeoLocSpeedComp!.latitude,
-        //     prevGeoLocSpeedComp!.longitude,
-        //     geoLoc.last!.latitude,
-        //     geoLoc.last!.longitude,
-        //     (speedReadIntervals / 1000));
+        double currSpeed = computeSpeed(
+            prevGeoLocSpeedComp!.latitude,
+            prevGeoLocSpeedComp!.longitude,
+            geoLoc.last!.latitude,
+            geoLoc.last!.longitude,
+            (speedReadIntervals / 1000));
 
         if (currSpeed != 0) {
           double newSamplingRate = recomputeSamplingRate(1, currentSpeed);
@@ -212,7 +212,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
           }
           speedRead.add(currSpeed);
         });
-      }
+      
     }
   }
 
