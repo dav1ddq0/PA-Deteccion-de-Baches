@@ -346,7 +346,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   // Speed Widget
   Widget speedWidget() {
     return SpeedSensor(
-        speed: speedRead.isEmpty ? 'None' : '${speedRead.last}',
+        speed: speedRead.isEmpty ? 'None' : speedRead.last.toStringAsPrecision(4),
         name: "Speed Ours");
   }
 
