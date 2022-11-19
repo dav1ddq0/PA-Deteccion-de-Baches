@@ -77,6 +77,10 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
     return speedRead.isNotEmpty ? speedRead.last : 0;
   }
 
+  double get currentSpeedGPS {
+    return currentPosition != null ? (currentPosition!.speed * 3.6): 0;
+  }
+
   Future<void> storeSensorData() async {
     /* final newAccelFilt = updateAccelData( */
     /*     currReadX, currReadY, currReadZ, prevReadX, prevReadY, prevReadZ); */
@@ -115,7 +119,7 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
             'longitude': currentPosition!.longitude,
             'accuracy': currentPosition!.accuracy,
           },
-          'speed': currentSpeed,
+          'speed': currentSpeedGPS,
           // 'speed_gps': currentPosition!.speed,
           'sampling': accelReadIntervals,
           'label': selectedItem as String,
@@ -189,30 +193,28 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
       speedRead.removeAt(0);
     }
 
-    if (prevGeoLocSpeedComp != null) {
-      
-        // double currSpeed = currentPosition!.speed;
+    if (prevGeoLocSpeedComp != null && currentPosition != null) {
+      double currSpeedGPS = currentPosition!.speed * 3.6;
 
-        double currSpeed = computeSpeed(
-            prevGeoLocSpeedComp!.latitude,
-            prevGeoLocSpeedComp!.longitude,
-            geoLoc.last!.latitude,
-            geoLoc.last!.longitude,
-            (speedReadIntervals / 1000));
+      double currSpeed = computeSpeed(
+          prevGeoLocSpeedComp!.latitude,
+          prevGeoLocSpeedComp!.longitude,
+          geoLoc.last!.latitude,
+          geoLoc.last!.longitude,
+          (speedReadIntervals / 1000));
 
-        if (currSpeed != 0) {
-          double newSamplingRate = recomputeSamplingRate(1, currentSpeed);
-          accelReadIntervals = (1000 * newSamplingRate).floor();
+      if (currSpeedGPS != 0) {
+        double newSamplingRate = recomputeSamplingRate(1, currSpeedGPS);
+        accelReadIntervals = (1000 * newSamplingRate).floor();
+      }
+      /* currSpeed = speedRead.last * 0.8 + currSpeed * 0.2; */
+
+      setState(() {
+        if (geoLoc.isNotEmpty) {
+          prevGeoLocSpeedComp = geoLoc.last;
         }
-        /* currSpeed = speedRead.last * 0.8 + currSpeed * 0.2; */
-
-        setState(() {
-          if (geoLoc.isNotEmpty) {
-            prevGeoLocSpeedComp = geoLoc.last;
-          }
-          speedRead.add(currSpeed);
-        });
-      
+        speedRead.add(currSpeed);
+      });
     }
   }
 
@@ -346,15 +348,16 @@ class _HomeTabState extends State<HomeTab> with AutomaticKeepAliveClientMixin {
   // Speed Widget
   Widget speedWidget() {
     return SpeedSensor(
-        speed: speedRead.isEmpty ? 'None' : speedRead.last.toStringAsPrecision(4),
+        speed:
+            speedRead.isEmpty ? 'None' : speedRead.last.toStringAsPrecision(4),
         name: "Speed Ours");
   }
 
   Widget speed2Widget() {
     return SpeedSensor(
-        speed: geoLoc.isEmpty
+        speed:currentPosition == null
             ? 'None'
-            : '${geoLoc.last?.speed.toStringAsPrecision(4)}',
+            : '${currentSpeedGPS.toStringAsPrecision(4)}',
         name: "Speed GPS");
   }
 
